@@ -1,0 +1,44 @@
+:root{
+    --dark-red: #F05039;
+    --light-red: #E57A77;
+    --dark-blue: #1F449C;
+    --light-blue: #7CA1CC;
+    --glow-yellow: #c8b400;
+}
+
+.cursor-pointer{
+    cursor: pointer;
+}
+
+@keyframes glow {
+    to {
+        border-color: var(--glow-yellow);
+        box-shadow: 0 0 20px var(--glow-yellow);
+        -webkit-box-shadow: 0 0 20px var(--glow-yellow);
+        -moz-box-shadow: 0 0 20px var(--glow-yellow);
+    }
+}
+
+@-webkit-keyframes glow {
+    to {
+        border-color: var(--glow-yellow);
+        box-shadow: 0 0 20px var(--glow-yellow);
+        -webkit-box-shadow: 0 0 20px var(--glow-yellow);
+        -moz-box-shadow: 0 0 20px var(--glow-yellow);
+    }
+}
+
+.glow-tile>img:hover {
+    border: 1px solid transparent;
+    animation: glow 1.0s infinite alternate;
+    -webkit-animation: glow 1.0s infinite alternate;  
+    -webkit-transition: border 1.0s linear, box-shadow 1.0s linear;
+    -moz-transition: border 1.0s linear, box-shadow 1.0s linear;
+    transition: border 1.0s linear, box-shadow 1.0s linear;
+}
+
+.center-block{
+    display: table;
+    margin-left: auto;
+    margin-right: auto;
+}
