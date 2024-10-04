@@ -103,20 +103,25 @@ $(async function () {
                 $element.next('.actionbar-slot-details').slideDown();
 
                 // Initialize SortableJS for the new container
-                let sortableContainer = $element.next('.actionbar-slot-details')[0]; // Get the new container element
-                new Sortable(sortableContainer, {
-                    animation: 150,
-                    onEnd: function (evt) {
-                        const oldIndex = evt.oldIndex;
-                        const newIndex = evt.newIndex;
-                        handleSlotActionReorder(profileName, actionbarId, slotIndex, oldIndex, newIndex);
-                    }
-                });
+                initializeSortableContainer($element, profileName, actionbarId, slotIndex);
             });
         });
     });
 
 });
+
+function initializeSortableContainer($compoundSlot, profileName, actionbarId, slotIndex) {
+    let sortableContainer = $compoundSlot.next('.actionbar-slot-details')[0];
+    new Sortable(sortableContainer, {
+        animation: 150,
+        onEnd: function (evt) {
+            const oldIndex = evt.oldIndex;
+            const newIndex = evt.newIndex;
+            slotIndex = evt.item.getAttribute('data-slot-index');
+            handleSlotActionReorder(profileName, actionbarId, slotIndex, oldIndex, newIndex);
+        }
+    });
+}
 
 function handleJsonImport() {
     return function () {
@@ -246,19 +251,27 @@ function handleSlotReorder(profileName, actionbarIndex, oldIndex, newIndex) {
     const movedItem = actionbars[actionbarIndex].splice(oldIndex, 1)[0]; // Remove item from oldIndex
     actionbars[actionbarIndex].splice(newIndex, 0, movedItem); // Insert item at newIndex
 
+    // add actionbars back into profileData
+    profileData[1][0] = actionbars;
+
     // Save the updated profile data
     profileManager.saveProfile(profileName, profileData);
 
     // update parent slots indices
     var $parentSlots = $(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container`);
     for (let i = 0; i < $parentSlots.length; i++) {
-        const $slot = $(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container[data-slot-index="${i}"]`);
-        $slot.attr('data-slot-index', i);
-    }
 
-    // if this is a compound action and child actions are visible, update their index
-    updateActionSlotIndices(actionbarIndex, oldIndex);
-    updateActionSlotIndices(actionbarIndex, newIndex);
+        let $parentSlot = $parentSlots.eq(i);
+        $parentSlot.attr('data-slot-index', i);
+
+        // update the action index for all children
+        var $children = $parentSlots.eq(i).next('.actionbar-slot-details').find('.action-slot');
+        for (let j = 0; j < $children.length; j++) {
+            $children.eq(j).attr('data-slot-index', i);
+            $children.eq(j).attr('data-action-index', j);
+        }
+        $parentSlot.find('img').attr('src', $children.first().find('img').attr('src'));
+    }
 }
 
 function handleSlotActionReorder(profileName, actionbarIndex, slotIndex, oldIndex, newIndex) {
@@ -271,25 +284,28 @@ function handleSlotActionReorder(profileName, actionbarIndex, slotIndex, oldInde
     const movedAction = actionbarSlot.actions.splice(oldIndex, 1)[0]; // Remove action from oldIndex
     actionbarSlot.actions.splice(newIndex, 0, movedAction); // Insert action at newIndex
 
+    // add actionbarSlot back into actionbars
+    actionbars[actionbarIndex][slotIndex] = actionbarSlot;
+
+    // add actionbars back into profileData
+    profileData[1][0] = actionbars;
+
     // Save the updated profile data
     profileManager.saveProfile(profileName, profileData);
 
-    // loop through all action-slots in the actionbar-slot-details and update their index
-    updateActionSlotIndices(actionbarIndex, slotIndex);
-}
+    // update parent slots indices
+    var $parentSlots = $(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container`);
+    for (let i = 0; i < $parentSlots.length; i++) {
 
-function updateActionSlotIndices(actionbarIndex, slotIndex) {
+        let $parentSlot = $parentSlots.eq(i);
+        $parentSlot.attr('data-slot-index', i);
 
-    const $parentAction = $(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container[data-slot-index="${slotIndex}"]`);
-
-    const $children = $parentAction.next('.actionbar-slot-details').find('.action-slot');
-
-    // update the slot index for all children
-    for(let i = 0; i < $children.length; i++) {
-        const $child = $(`.action-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"][data-action-index="${i}"]`);
-        $child.attr('data-slot-index', $parentAction.attr('data-slot-index'));
-        $child.attr('data-action-index', i);
+        // update the action index for all children
+        var $children = $parentSlots.eq(i).next('.actionbar-slot-details').find('.action-slot');
+        for (let j = 0; j < $children.length; j++) {
+            $children.eq(j).attr('data-slot-index', i);
+            $children.eq(j).attr('data-action-index', j);
+        }
+        $parentSlot.find('img').attr('src', $children.first().find('img').attr('src'));
     }
-
-    $parentAction.find('img').attr('src', $children.first().find('img').attr('src'));
 }
