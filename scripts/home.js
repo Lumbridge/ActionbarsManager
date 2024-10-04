@@ -49,19 +49,21 @@ $(async function () {
         await loadActionbars(profileName);
     });
 
-    $(document).on("click", ".CompoundItem", function () {
+    $(document).on("click", ".CompoundItem", function (e) {
+
+        var $element = $(e.target).closest('.CompoundItem');
 
         // if the actionbar slot details are already visible, hide them
-        if ($(this).next('.actionbar-slot-details').length > 0) {
-            $(this).next('.actionbar-slot-details').slideUp(function () {
-                $(this).remove();
+        if ($element.next('.actionbar-slot-details').length > 0) {
+            $element.next('.actionbar-slot-details').slideUp(function () {
+                $element.next('.actionbar-slot-details').remove();
             });
             return;
         }
 
-        const profileName = $(this).data('profile-name');
-        const actionbarId = $(this).data('actionbar-id');
-        const slotIndex = $(this).data('slot-index');
+        var profileName = $element.attr('data-profile-name');
+        var actionbarId = $element.attr('data-actionbar-id');
+        var slotIndex = $element.attr('data-slot-index');
 
         // Fetch the actionbar slot
         profileManager.getActionbarSlot(profileName, actionbarId, slotIndex).then((actionbarSlot) => {
@@ -74,7 +76,7 @@ $(async function () {
             // Once all actions are fetched
             Promise.all(promises).then(actionsWithImages => {
                 let actionbarSlotHtml = actionsWithImages.map(action => `
-                    <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle slot-container center-block border border-2 rounded p-2 cursor-pointer"
+                    <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle sub-slot-container center-block border border-2 rounded py-2 cursor-pointer"
                         data-actionbar-index="${actionbarId}" 
                         data-slot-index="${slotIndex}"
                         data-action-index="${action.actionIndex}">
@@ -84,17 +86,17 @@ $(async function () {
                 `).join('');
 
                 // Append the generated actionbar slots after the current element
-                $(this).after(`
+                $element.after(`
                     <div class="actionbar-slot-details">
                         ${actionbarSlotHtml}
                     </div>
                 `);
 
                 // Slide down the actionbar slot details
-                $(this).next('.actionbar-slot-details').slideDown();
+                $element.next('.actionbar-slot-details').slideDown();
 
                 // Initialize SortableJS for the new container
-                const sortableContainer = $(this).next('.actionbar-slot-details')[0]; // Get the new container element
+                const sortableContainer = $element.next('.actionbar-slot-details')[0]; // Get the new container element
                 new Sortable(sortableContainer, {
                     animation: 150,
                     onEnd: function (evt) {
@@ -238,6 +240,16 @@ function handleSlotReorder(profileName, actionbarIndex, oldIndex, newIndex) {
 
     // Save the updated profile data
     storage.save(profileKey, profileData);
+
+    // loop through all actions on the actionbar and update their index
+    const actionSlots = document.querySelectorAll(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container`);
+    for (let i = 0; i < actionSlots.length; i++) {
+        actionSlots[i].setAttribute('data-slot-index', i);
+    }
+
+    // if this is a compound action and child actions are visible, update their index
+    updateActionSlotIndices(actionbarIndex, oldIndex);
+    updateActionSlotIndices(actionbarIndex, newIndex);
 }
 
 function handleSlotActionReorder(profileName, actionbarIndex, slotIndex, oldIndex, newIndex) {
@@ -253,14 +265,18 @@ function handleSlotActionReorder(profileName, actionbarIndex, slotIndex, oldInde
     storage.save(profileKey, profileData);
 
     // loop through all action-slots in the actionbar-slot-details and update their index
+    updateActionSlotIndices(actionbarIndex, slotIndex);
+}
+
+function updateActionSlotIndices(actionbarIndex, slotIndex) {
     const actionSlots = document.querySelectorAll(`.action-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`);
     for (let i = 0; i < actionSlots.length; i++) {
 
         actionSlots[i].setAttribute('data-action-index', i);
-        
-        if(i === 0){
+
+        if (i === 0) {
             // get jquery element for the actionbar slot
-            const $actionbarSlotElement = $(`.action-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"][data-action-index="0"]`);
+            const $actionbarSlotElement = $(`.action-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"][data-action-index="${i}"]`);
             // get image link for actionbarSlotElement
             const newSlotImg = $actionbarSlotElement.find('img').attr('src');
             // get parent element for the actionbar slot
