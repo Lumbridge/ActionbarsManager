@@ -6,11 +6,11 @@ $(async function () {
 
     // Handle the set endpoint button click event
     $(document).on("click", "#set-endpoint-button", function () {
-        currentApiUrl = $("#api-base-url").val();
+        var apiBaseUrlText = $("#api-base-url").val();
         useProxy = $("#use-proxy").is(":checked");
-        storage.save('apiBaseUrl', currentApiUrl);
+        storage.save('apiBaseUrl', apiBaseUrlText);
         storage.save('useProxy', useProxy);
-        notificationManager.info(`API base URL updated to ${currentApiUrl} & use proxy set to ${useProxy}`);
+        notificationManager.info(`API base URL updated to ${apiBaseUrlText} & use proxy set to ${useProxy}`);
     });
 
     // Handle the import data button click event
@@ -51,7 +51,7 @@ $(async function () {
 
     $(document).on("click", ".CompoundItem", function (e) {
 
-        var $element = $(e.target).closest('.CompoundItem');
+        let $element = $(e.target).closest('.CompoundItem');
 
         // if the actionbar slot details are already visible, hide them
         if ($element.next('.actionbar-slot-details').length > 0) {
@@ -61,9 +61,12 @@ $(async function () {
             return;
         }
 
-        var profileName = $element.attr('data-profile-name');
-        var actionbarId = $element.attr('data-actionbar-id');
-        var slotIndex = $element.attr('data-slot-index');
+        let profileName = $element.attr('data-profile-name');
+        let actionbarId = $element.attr('data-actionbar-id');
+        let slotIndex = $element.attr('data-slot-index');
+
+        // show a loader while fetching the actionbar slot details
+        $element.find('.flavour-text').after('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>');
 
         // Fetch the actionbar slot
         profileManager.getActionbarSlot(profileName, actionbarId, slotIndex).then((actionbarSlot) => {
@@ -79,8 +82,9 @@ $(async function () {
                     <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle sub-slot-container center-block border border-2 rounded py-2 cursor-pointer"
                         data-actionbar-index="${actionbarId}" 
                         data-slot-index="${slotIndex}"
-                        data-action-index="${action.actionIndex}">
-                            <img src="${action.imageLink}" alt="Action Image">
+                        data-action-index="${action.actionIndex}"
+                        style="max-width:130px;">
+                            <img src="${action.imageLink}" alt="Unknown Item (ID: ${action.itemId})">
                             <div>${action.flavourText}</div>
                     </div>
                 `).join('');
@@ -92,11 +96,14 @@ $(async function () {
                     </div>
                 `);
 
+                // Remove the loader
+                $element.find('.spinner-border').remove();
+
                 // Slide down the actionbar slot details
                 $element.next('.actionbar-slot-details').slideDown();
 
                 // Initialize SortableJS for the new container
-                const sortableContainer = $element.next('.actionbar-slot-details')[0]; // Get the new container element
+                let sortableContainer = $element.next('.actionbar-slot-details')[0]; // Get the new container element
                 new Sortable(sortableContainer, {
                     animation: 150,
                     onEnd: function (evt) {
@@ -120,7 +127,7 @@ function handleJsonImport() {
 }
 
 function loadApiControls() {
-    var apiUrlWithoutProxy = currentApiUrl.replace(proxyUrl, "");
+    var apiUrlWithoutProxy = endpointManager.getCurrentEndpoint(stripProxy = true);
     $("#api-base-url").val(apiUrlWithoutProxy);
     $("#use-proxy").prop("checked", useProxy);
 }
@@ -179,7 +186,7 @@ async function loadActionbars(profileName) {
                      data-actionbar-index="${actionbarIndex}" 
                      data-slot-index="${slotIndex}" 
                      style="width: ${slotWidth}px; height: ${slotHeight}px; opacity: 0.5; pointer-events: none;">
-                    <div class="spinner-grow text-primary" role="status" style="width: ${spinnerSize}rem; height: ${spinnerSize}rem;">
+                    <div class="spinner-border text-primary" role="status" style="width: ${spinnerSize}rem; height: ${spinnerSize}rem;">
                         <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
@@ -201,7 +208,7 @@ async function loadActionbars(profileName) {
                     var slotColumn = `
                     <div data-profile-name="${profileName}" data-actionbar-id="${actionbarIndex}" data-slot-index="${slotIndex}" class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 cursor-pointer ${actionbarSlot.type}" style="width: ${slotWidth}px; height: ${slotHeight}px;">
                         <img height="${imgHeight}" src="${actionbarSlot.imageLink}" alt="Unknown Item (ID: ${actionbarSlot.itemId})">
-                        <div class="text-center">${actionbarSlot.flavourText}</div>
+                        <div class="flavour-text text-center">${actionbarSlot.flavourText}</div>
                     </div>
                     `;
 
@@ -231,20 +238,22 @@ async function loadActionbars(profileName) {
 }
 
 function handleSlotReorder(profileName, actionbarIndex, oldIndex, newIndex) {
-    const profileData = storage.load(profileKey);
-    const actionbars = profileData.find(profile => profile[0] === profileName)[1][0];
+    
+    const profileData = profileManager.getProfile(profileName);
+    const actionbars = profileManager.getActionbars(profileName);
 
     // Reorder the slots in the actionbar
     const movedItem = actionbars[actionbarIndex].splice(oldIndex, 1)[0]; // Remove item from oldIndex
     actionbars[actionbarIndex].splice(newIndex, 0, movedItem); // Insert item at newIndex
 
     // Save the updated profile data
-    storage.save(profileKey, profileData);
+    profileManager.saveProfile(profileName, profileData);
 
-    // loop through all actions on the actionbar and update their index
-    const actionSlots = document.querySelectorAll(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container`);
-    for (let i = 0; i < actionSlots.length; i++) {
-        actionSlots[i].setAttribute('data-slot-index', i);
+    // update parent slots indices
+    var $parentSlots = $(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container`);
+    for (let i = 0; i < $parentSlots.length; i++) {
+        const $slot = $(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container[data-slot-index="${i}"]`);
+        $slot.attr('data-slot-index', i);
     }
 
     // if this is a compound action and child actions are visible, update their index
@@ -253,8 +262,9 @@ function handleSlotReorder(profileName, actionbarIndex, oldIndex, newIndex) {
 }
 
 function handleSlotActionReorder(profileName, actionbarIndex, slotIndex, oldIndex, newIndex) {
-    const profileData = storage.load(profileKey);
-    const actionbars = profileData.find(profile => profile[0] === profileName)[1][0];
+    
+    const profileData = profileManager.getProfile(profileName);
+    const actionbars = profileManager.getActionbars(profileName);
 
     // Reorder the actions in the slot
     const actionbarSlot = actionbars[actionbarIndex][slotIndex];
@@ -262,62 +272,24 @@ function handleSlotActionReorder(profileName, actionbarIndex, slotIndex, oldInde
     actionbarSlot.actions.splice(newIndex, 0, movedAction); // Insert action at newIndex
 
     // Save the updated profile data
-    storage.save(profileKey, profileData);
+    profileManager.saveProfile(profileName, profileData);
 
     // loop through all action-slots in the actionbar-slot-details and update their index
     updateActionSlotIndices(actionbarIndex, slotIndex);
 }
 
 function updateActionSlotIndices(actionbarIndex, slotIndex) {
-    const actionSlots = document.querySelectorAll(`.action-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`);
-    for (let i = 0; i < actionSlots.length; i++) {
 
-        actionSlots[i].setAttribute('data-action-index', i);
+    const $parentAction = $(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container[data-slot-index="${slotIndex}"]`);
 
-        if (i === 0) {
-            // get jquery element for the actionbar slot
-            const $actionbarSlotElement = $(`.action-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"][data-action-index="${i}"]`);
-            // get image link for actionbarSlotElement
-            const newSlotImg = $actionbarSlotElement.find('img').attr('src');
-            // get parent element for the actionbar slot
-            const $parentElement = $actionbarSlotElement.parent().siblings('.CompoundItem');
-            // get img child element from parent element
-            const $imgElement = $parentElement.find('img');
-            $imgElement.attr('src', newSlotImg);
-        }
-    }
-}
+    const $children = $parentAction.next('.actionbar-slot-details').find('.action-slot');
 
-function renderActionbarSlot(actionbarSlot) {
-    return `
-        <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle slot-container center-block border border-2 rounded p-2 cursor-pointer"
-            data-actionbar-index="${actionbarSlot.actionbarIndex}" 
-            data-slot-index="${actionbarSlot.slotIndex}"
-            data-action-index="${actionbarSlot.actionIndex}">
-                <img src="${actionbarSlot.imageLink}" alt="Action Image">
-                <div>${actionbarSlot.flavourText}</div>
-        </div>
-    `;
-}
-
-async function getImageLink(type, actionbarSlot) {
-
-    var imageLink = "";
-
-    if (type === "CompoundItem") {
-        type = actionbarSlot.actions[0].type;
-        return getImageLink(type, actionbarSlot.actions[0]);
-    }
-    else if (type === "ItemItem") {
-        var spriteItemId = actionbarSlot.customSprite == '-1' || !actionbarSlot.customSprite ? actionbarSlot.itemId : actionbarSlot.customSprite;
-        imageLink = await itemFetcher.fetchItemImage(spriteItemId);
-    }
-    else if (type === "OrbItem") {
-        imageLink = widgetLookup.fetchItemImage(actionbarSlot.widgetType);
-    }
-    else {
-        imageLink = widgetLookup.fetchItemImage(actionbarSlot.widgetId);
+    // update the slot index for all children
+    for(let i = 0; i < $children.length; i++) {
+        const $child = $(`.action-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"][data-action-index="${i}"]`);
+        $child.attr('data-slot-index', $parentAction.attr('data-slot-index'));
+        $child.attr('data-action-index', i);
     }
 
-    return imageLink;
+    $parentAction.find('img').attr('src', $children.first().find('img').attr('src'));
 }

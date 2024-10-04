@@ -4,7 +4,7 @@ const profileKey = 'profileData';
 class ProfileManager {
 
     constructor() {
-        const profileData = storage.load(profileKey);
+        let profileData = storage.load(profileKey);
         if (!profileData) {
             storage.save(profileKey, []);
         }
@@ -12,14 +12,21 @@ class ProfileManager {
 
     // Get a list of profile names
     getProfileNames() {
-        const profileData = storage.load(profileKey);
+        let profileData = storage.load(profileKey);
         return profileData.map(profile => profile[0]);
     }
 
     // Get a profile by name
     getProfile(profileName) {
-        const profileData = storage.load(profileKey);
+        let profileData = storage.load(profileKey);
         return profileData.find(profile => profile[0] === profileName);
+    }
+
+    saveProfile(profileName, profileData) {
+        let allProfiles = storage.load(profileKey);
+        let profileIndex = allProfiles.findIndex(profile => profile[0] === profileName);
+        allProfiles[profileIndex] = profileData;
+        storage.save(profileKey, allProfiles);
     }
 
     // Method to import a profile
@@ -68,13 +75,13 @@ class ProfileManager {
 
     // Get Actionbars
     getActionbars(profileName) {
-        const profileData = this.getProfile(profileName);
+        let profileData = this.getProfile(profileName);
         return profileData[1][0];
     }
 
     // Get Actionbar
     getActionbar(profileName, actionbarIndex) {
-        const actionbars = this.getActionbars(profileName);
+        let actionbars = this.getActionbars(profileName);
         return actionbars[actionbarIndex];
     }
 
@@ -82,7 +89,7 @@ class ProfileManager {
     async getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex = -1, addApiData = true, addImageLink = true) {
 
         // Get the actionbar
-        const actionbar = this.getActionbar(profileName, actionbarIndex);
+        let actionbar = this.getActionbar(profileName, actionbarIndex);
 
         // Get the slot from the actionbar
         var slot = actionbar[slotIndex];
@@ -101,7 +108,7 @@ class ProfileManager {
         // Get the image link for the slot
         if (addImageLink) {
             if (addApiData && slot.apiData !== undefined || slot.type !== "ItemItem") {
-                slot.imageLink = await getImageLink(slot.type, slot);
+                slot.imageLink = await this.getImageLink(slot.type, slot);
             }
         }
 
@@ -180,6 +187,27 @@ class ProfileManager {
         storage.save(profileKey, profileData);
     }
 
+    async getImageLink(type, actionbarSlot) {
+
+        var imageLink = "";
+    
+        if (type === "CompoundItem") {
+            type = actionbarSlot.actions[0].type;
+            return this.getImageLink(type, actionbarSlot.actions[0]);
+        }
+        else if (type === "ItemItem") {
+            var spriteItemId = actionbarSlot.customSprite == '-1' || !actionbarSlot.customSprite ? actionbarSlot.itemId : actionbarSlot.customSprite;
+            imageLink = await itemFetcher.fetchItemImage(spriteItemId);
+        }
+        else if (type === "OrbItem") {
+            imageLink = widgetLookup.fetchItemImage(actionbarSlot.widgetType);
+        }
+        else {
+            imageLink = widgetLookup.fetchItemImage(actionbarSlot.widgetId);
+        }
+
+        return imageLink;
+    }
 }
 
 var profileManager = new ProfileManager();

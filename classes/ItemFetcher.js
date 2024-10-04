@@ -1,22 +1,7 @@
-
-const defaultApiBaseUrl = 'https://osrsplugins.xyz/api';
-const proxyUrl = 'https://cors-proxy.fringe.zone/';
-const imageBaseUrl = 'https://oldschool.runescape.wiki/images';
-
-var currentApiUrl = '';
-var useProxy = true;
-
 const cacheRefreshInterval = 30; // 30 days
 
 class ItemFetcher {
     constructor() {
-        currentApiUrl = storage.load('apiBaseUrl') || defaultApiBaseUrl;
-        useProxy = storage.load('useProxy');
-
-        if (useProxy) {
-            currentApiUrl = proxyUrl + currentApiUrl;
-        }
-
         this.cacheItemCatalogue();
     }
 
@@ -37,10 +22,11 @@ class ItemFetcher {
             }
 
             console.log('Refreshing cache');
-            const response = await fetch(`${currentApiUrl}/items`);
+
+            const response = await fetch(`${endpointManager.getCurrentEndpoint()}/items`);
 
             if (!response.ok) {
-                notificationManager.error(`HTTP error! Status: ${response.status}`);
+                console.error(`Unable to fetch item ${itemId} from API - Status: ${response.status} (${response.statusText})`);
                 return;
             }
 
@@ -53,9 +39,9 @@ class ItemFetcher {
 
             console.log(`Got ${data.length} items from API`);
 
-            // Loop through the items and cache them in IndexedDB
-            for (var item of data) {
-                await indexedDBHelper.saveToIndexedDB('items', item);
+            // Loop through the items and cache them in IndexedDB and update loading bar progress
+            for (let i = 0; i < data.length; i++) {
+                await indexedDBHelper.saveToIndexedDB('items', data[i]);
             }
 
             // Update the cacheLastUpdated metadata
@@ -64,13 +50,21 @@ class ItemFetcher {
             return data;
 
         } catch (error) {
+
             console.log(error);
-            notificationManager.error('Error fetching item data: ' + error.message);
+
+            notificationManager.error('Error fetching item data when caching item catalogue: ' + error.message);
+
         }
     }
 
     async fetchItem(itemId) {
         try {
+
+            if (itemId === undefined) {
+                return;
+            }
+
             // Check if the item is already in IndexedDB
             const cachedItem = await indexedDBHelper.getFromIndexedDB('items', itemId);
 
@@ -78,19 +72,20 @@ class ItemFetcher {
                 return cachedItem;
             }
 
+            console.info(`fetching using ${endpointManager.getCurrentEndpoint()}`);
+
             // Fetch item from API if not in cache
-            const response = await fetch(`${currentApiUrl}/items/${itemId}`);
+            const response = await fetch(`${endpointManager.getCurrentEndpoint()}/items/${itemId}`);
 
             if (!response.ok) {
-                notificationManager.error(`HTTP error! Status: ${response.status}`);
-                return;
+                console.error(`Unable to fetch item ${itemId} from API - Status: ${response.status} (${response.statusText})`);
+                return "";
             }
 
             const data = await response.json();
 
             if (_.isEmpty(data)) {
-                //notificationManager.error('No data returned from API for ID ' + itemId);
-                return;
+                return "";
             }
 
             // Cache the fetched item in IndexedDB
@@ -99,17 +94,25 @@ class ItemFetcher {
             return data;
 
         } catch (error) {
+
             console.log(error);
-            notificationManager.error('Error fetching item data: ' + error.message);
+
+            notificationManager.error(`${error}`);
+
         }
     }
 
     async fetchItemImage(itemId) {
         try {
+
+            if (itemId === undefined) {
+                return "";
+            }
+
             var item = await this.fetchItem(itemId);
 
             if (!item) {
-                return;
+                return "";
             }
 
             var itemName = item.name.replace(/ /g, '_');
@@ -118,6 +121,7 @@ class ItemFetcher {
             itemName = itemName.replace(/_100$|_75$|_50$|_25$/, '');
 
             var imageLink = `${imageBaseUrl}/${itemName}.png`;
+
             return imageLink;            
 
         } catch (error) {
