@@ -1,9 +1,11 @@
 :root{
+    --dark-hover-red: #4d1111;
     --dark-red: #F05039;
     --light-red: #E57A77;
     --dark-blue: #1F449C;
     --light-blue: #7CA1CC;
     --glow-yellow: #c8b400;
+    --light-grey: #596b7c;
 }
 
 .cursor-pointer{
@@ -41,4 +43,14 @@
     display: table;
     margin-left: auto;
     margin-right: auto;
+}
+
+.context-menu-item:hover{
+    background-color: var(--light-grey);
+    color: white;
+}
+
+.list-group-item-danger:hover {
+    background-color: var(--dark-hover-red);
+    color: white;
 }

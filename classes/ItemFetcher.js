@@ -122,11 +122,41 @@ class ItemFetcher {
 
             var imageLink = `${imageBaseUrl}/${itemName}.png`;
 
-            return imageLink;            
+            return imageLink;
 
         } catch (error) {
             console.log(error);
             notificationManager.error(`Error fetching item ${itemId} image: ` + error.message);
+        }
+    }
+
+    async fetchItemActions(profileName, actionbarId, slotIndex) {
+        try {
+
+            if (actionbarId === undefined || slotIndex === undefined) {
+                return "";
+            }
+
+            var actionbar = profileManager.getActionbar(profileName, actionbarId);
+
+            if (!actionbar) {
+                return "";
+            }
+
+            var itemId = actionbar[slotIndex].itemId;
+
+            var item = await this.fetchItem(itemId);
+
+            // remove null values
+            item.inventoryActions = item.inventoryActions.filter(function (el) {
+                return el != null;
+            });
+
+            return item.inventoryActions;
+
+        } catch (error) {
+            console.log(error);
+            notificationManager.error(`Error fetching actionbar ${actionbarId} slot ${slotIndex} action: ` + error.message);
         }
     }
 }

@@ -15,7 +15,6 @@ $(async function () {
 
     // Handle the import data button click event
     $(document).on("click", "#import-data", function () {
-        // Show the Bootbox modal with input fields for profile name and JSON data
         bootbox.dialog({
             title: 'Import Data',
             message: `
@@ -29,15 +28,8 @@ $(async function () {
             </div>
         `,
             buttons: {
-                cancel: {
-                    label: "Cancel",
-                    className: 'btn-secondary'
-                },
-                save: {
-                    label: "Save",
-                    className: 'btn-primary',
-                    callback: handleJsonImport()
-                }
+                cancel: { label: "Cancel", className: 'btn-secondary' },
+                save: { label: "Save", className: 'btn-primary', callback: handleJsonImport() }
             }
         });
     });
@@ -49,11 +41,32 @@ $(async function () {
         await loadActionbars(profileName);
     });
 
-    $(document).on("click", ".CompoundItem", function (e) {
+    $(document).on("contextmenu", ".CompoundItem", function (e) {
+        e.preventDefault(); // Prevent the default context menu from appearing
 
+        const slotIndex = $(this).attr('data-slot-index');
+        const actionbarIndex = $(this).attr('data-actionbar-id');
+
+        // Create a custom context menu (e.g., for editing, deleting items)
+        showContextMenu(e, actionbarIndex, slotIndex);
+    });
+
+    $(document).on("contextmenu", ".ItemItem", function (e) {
+        e.preventDefault(); // Prevent the default context menu from appearing
+
+        const slotIndex = $(this).attr('data-slot-index');
+        const actionbarIndex = $(this).attr('data-actionbar-id');
+        const profileName = $('#profileDropdown').text();
+
+        itemFetcher.fetchItemActions(profileName, actionbarIndex, slotIndex).then((actions) => {
+            showContextMenu(e, actionbarIndex, slotIndex, actions);
+        });
+
+    });
+
+    $(document).on("click", ".CompoundItem", function (e) {
         let $element = $(e.target).closest('.CompoundItem');
 
-        // if the actionbar slot details are already visible, hide them
         if ($element.next('.actionbar-slot-details').length > 0) {
             $element.next('.actionbar-slot-details').slideUp(function () {
                 $element.next('.actionbar-slot-details').remove();
@@ -65,18 +78,13 @@ $(async function () {
         let actionbarId = $element.attr('data-actionbar-id');
         let slotIndex = $element.attr('data-slot-index');
 
-        // show a loader while fetching the actionbar slot details
-        $element.find('.flavour-text').after('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>');
+        $element.find('.keybind').after('<div class="spinner-border text-primary" role="status" style="width:15px; height:15px;"><span class="visually-hidden">Loading...</span></div>');
 
-        // Fetch the actionbar slot
         profileManager.getActionbarSlot(profileName, actionbarId, slotIndex).then((actionbarSlot) => {
-
-            // Collect all promises to fetch actions
             let promises = actionbarSlot.actions.map((action, actionIndex) =>
                 profileManager.getActionbarSlot(profileName, actionbarId, slotIndex, actionIndex)
             );
 
-            // Once all actions are fetched
             Promise.all(promises).then(actionsWithImages => {
                 let actionbarSlotHtml = actionsWithImages.map(action => `
                     <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle sub-slot-container center-block border border-2 rounded py-2 cursor-pointer"
@@ -89,26 +97,71 @@ $(async function () {
                     </div>
                 `).join('');
 
-                // Append the generated actionbar slots after the current element
-                $element.after(`
-                    <div class="actionbar-slot-details">
-                        ${actionbarSlotHtml}
-                    </div>
-                `);
-
-                // Remove the loader
+                $element.after(`<div class="actionbar-slot-details">${actionbarSlotHtml}</div>`);
                 $element.find('.spinner-border').remove();
-
-                // Slide down the actionbar slot details
                 $element.next('.actionbar-slot-details').slideDown();
-
-                // Initialize SortableJS for the new container
                 initializeSortableContainer($element, profileName, actionbarId, slotIndex);
             });
         });
     });
-
 });
+
+function showContextMenu(event, actionbarIndex, slotIndex, inventoryActions = null) {
+    // Remove existing context menu if present
+    $('.custom-context-menu').remove();
+
+    let actionHtml = '';
+
+    if (inventoryActions) {
+        actionHtml = inventoryActions.map((action, actionIndex) => `
+            <li class="list-group-item context-menu-item cursor-pointer" data-action="change-action" data-actionbar-id="${actionbarIndex}" data-slot-index="${slotIndex}" data-action-index="${actionIndex}">${action}</li>
+        `).join('');
+    }
+
+    // Create the custom context menu
+    const menuHtml = `
+    <div class="custom-context-menu" style="position:absolute; top:${event.pageY}px; left:${event.pageX}px; z-index:1000;">
+        <ul class="list-group">
+            <li class="list-group-item context-menu-item cursor-pointer" data-action="edit" data-actionbar-id="${actionbarIndex}" data-slot-index="${slotIndex}">Edit Item</li>
+            <li class="list-group-item list-group-item-danger context-menu-item cursor-pointer" data-action="delete" data-actionbar-id="${actionbarIndex}" data-slot-index="${slotIndex}">Delete Item</li>
+            ${inventoryActions ? actionHtml : ''}
+        </ul>
+    </div>
+    `;
+
+    $('body').append(menuHtml);
+
+    // Handle context menu actions
+    $('.context-menu-item').on('click', function () {
+        const action = $(this).attr('data-action');
+        const actionbarIndex = $(this).attr('data-actionbar-id');
+        const slotIndex = $(this).attr('data-slot-index');
+
+        if (action === 'edit') {
+            editItem(actionbarIndex, slotIndex);
+        } else if (action === 'delete') {
+            deleteItem(actionbarIndex, slotIndex);
+        }
+
+        // Remove the context menu after action
+        $('.custom-context-menu').remove();
+    });
+
+    // Close the context menu if clicked outside
+    $(document).on('click', function () {
+        $('.custom-context-menu').remove();
+    });
+}
+
+function editItem(actionbarIndex, slotIndex) {
+    // Logic to edit item in the slot
+    alert(`Edit action triggered for actionbar: ${actionbarIndex}, slot: ${slotIndex}`);
+}
+
+function deleteItem(actionbarIndex, slotIndex) {
+    // Logic to delete item from the slot
+    alert(`Delete action triggered for actionbar: ${actionbarIndex}, slot: ${slotIndex}`);
+}
 
 function initializeSortableContainer($compoundSlot, profileName, actionbarId, slotIndex) {
     let sortableContainer = $compoundSlot.next('.actionbar-slot-details')[0];
@@ -168,22 +221,21 @@ async function loadActionbars(profileName) {
     // load actionbars
     var actionbars = profileManager.getActionbars(profileName);
 
+    var keyBinds = keybindManager.getKeybinds(profileName);
+
+    var keyBindsConverted = keyBinds.map(keyCode => keybindManager.convertKeyCode(keyCode));
+
     // loop through all actionbars
     for (var actionbarIndex in actionbars) {
 
-        // get actionbar as a number starting at 1 for the sub-titles
         var titleNumber = parseInt(actionbarIndex) + 1;
 
-        // add a title for each actionbar
         $('#actionbars-container').append(`<h5>Actionbar ${titleNumber}</h5>`);
 
-        // add a row for each actionbar
         var actionbarRow = `<div class="row rounded border border-3 p-2 m-1 mb-3 bg-light-subtle actionbar-sortable" id="actionbar-${actionbarIndex}">`;
 
-        // add the row to the actionbars container
         $('#actionbars-container').append(actionbarRow);
 
-        // create placeholders for each slot with a greyed-out state
         for (var slotIndex in actionbars[actionbarIndex]) {
             var placeholderColumn = `
             <div class="col-auto my-2 my-xxl-0">
@@ -202,10 +254,8 @@ async function loadActionbars(profileName) {
 
     $('#actionbars-container').removeClass('d-none');
 
-    // Collect all promises for loading slots concurrently
     let promises = [];
 
-    // asynchronously load and replace placeholders with actual actionbars
     for (let actionbarIndex in actionbars) {
         for (let slotIndex in actionbars[actionbarIndex]) {
             promises.push(
@@ -214,25 +264,22 @@ async function loadActionbars(profileName) {
                     <div data-profile-name="${profileName}" data-actionbar-id="${actionbarIndex}" data-slot-index="${slotIndex}" class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 cursor-pointer ${actionbarSlot.type}" style="width: ${slotWidth}px; height: ${slotHeight}px;">
                         <img height="${imgHeight}" src="${actionbarSlot.imageLink}" alt="Unknown Item (ID: ${actionbarSlot.itemId})">
                         <div class="flavour-text text-center">${actionbarSlot.flavourText}</div>
+                        <div class="keybind text-center">${keyBindsConverted[slotIndex]}</div>
                     </div>
                     `;
 
-                    // Replace the correct placeholder using the data attributes
                     $(`.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).replaceWith(slotColumn);
                 })
             );
         }
     }
 
-    // Wait for all promises to resolve
     await Promise.all(promises);
 
-    // After all slots are loaded, enable sorting and remove greyed-out effect
     $('.actionbar-sortable').each(function () {
         var actionbarIndex = $(this).attr('id').split('-')[1];
-        $(this).find('.slot-container').css('opacity', '1').css('pointer-events', 'auto'); // Remove greyed-out state
+        $(this).find('.slot-container').css('opacity', '1').css('pointer-events', 'auto');
 
-        // Enable Sortable once the items are fully loaded
         new Sortable(this, {
             animation: 150,
             onEnd: function (evt) {
@@ -247,24 +294,22 @@ function handleSlotReorder(profileName, actionbarIndex, oldIndex, newIndex) {
     const profileData = profileManager.getProfile(profileName);
     const actionbars = profileManager.getActionbars(profileName);
 
-    // Reorder the slots in the actionbar
-    const movedItem = actionbars[actionbarIndex].splice(oldIndex, 1)[0]; // Remove item from oldIndex
-    actionbars[actionbarIndex].splice(newIndex, 0, movedItem); // Insert item at newIndex
+    const movedItem = actionbars[actionbarIndex].splice(oldIndex, 1)[0];
+    actionbars[actionbarIndex].splice(newIndex, 0, movedItem);
 
-    // add actionbars back into profileData
     profileData[1][0] = actionbars;
 
-    // Save the updated profile data
     profileManager.saveProfile(profileName, profileData);
 
-    // update parent slots indices
     var $parentSlots = $(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container`);
     for (let i = 0; i < $parentSlots.length; i++) {
 
         let $parentSlot = $parentSlots.eq(i);
         $parentSlot.attr('data-slot-index', i);
 
-        // update the action index for all children
+        var keyBind = keybindManager.getSlotKeybind(profileName, i);
+        $parentSlot.find('.keybind').text(keyBind);
+
         var $children = $parentSlots.eq(i).next('.actionbar-slot-details').find('.action-slot');
         for (let j = 0; j < $children.length; j++) {
             $children.eq(j).attr('data-slot-index', i);
@@ -279,28 +324,22 @@ function handleSlotActionReorder(profileName, actionbarIndex, slotIndex, oldInde
     const profileData = profileManager.getProfile(profileName);
     const actionbars = profileManager.getActionbars(profileName);
 
-    // Reorder the actions in the slot
     const actionbarSlot = actionbars[actionbarIndex][slotIndex];
-    const movedAction = actionbarSlot.actions.splice(oldIndex, 1)[0]; // Remove action from oldIndex
-    actionbarSlot.actions.splice(newIndex, 0, movedAction); // Insert action at newIndex
+    const movedAction = actionbarSlot.actions.splice(oldIndex, 1)[0];
+    actionbarSlot.actions.splice(newIndex, 0, movedAction);
 
-    // add actionbarSlot back into actionbars
     actionbars[actionbarIndex][slotIndex] = actionbarSlot;
 
-    // add actionbars back into profileData
     profileData[1][0] = actionbars;
 
-    // Save the updated profile data
     profileManager.saveProfile(profileName, profileData);
 
-    // update parent slots indices
     var $parentSlots = $(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container`);
     for (let i = 0; i < $parentSlots.length; i++) {
 
         let $parentSlot = $parentSlots.eq(i);
         $parentSlot.attr('data-slot-index', i);
 
-        // update the action index for all children
         var $children = $parentSlots.eq(i).next('.actionbar-slot-details').find('.action-slot');
         for (let j = 0; j < $children.length; j++) {
             $children.eq(j).attr('data-slot-index', i);
