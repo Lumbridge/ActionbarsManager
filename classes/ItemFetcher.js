@@ -130,7 +130,7 @@ class ItemFetcher {
         }
     }
 
-    async fetchItemActions(profileName, actionbarId, slotIndex) {
+    async fetchItemActions(profileName, actionbarId, slotIndex, actionIndex = -1) {
         try {
 
             if (actionbarId === undefined || slotIndex === undefined) {
@@ -143,7 +143,12 @@ class ItemFetcher {
                 return "";
             }
 
-            var itemId = actionbar[slotIndex].itemId;
+            let itemId = -1;
+            if(actionIndex !== -1){
+                itemId = actionbar[slotIndex].actions[actionIndex].itemId;
+            }else{
+                itemId = actionbar[slotIndex].itemId;
+            }
 
             var item = await this.fetchItem(itemId);
 

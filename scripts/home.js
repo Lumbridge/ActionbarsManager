@@ -45,7 +45,7 @@ $(async function () {
         e.preventDefault(); // Prevent the default context menu from appearing
 
         const slotIndex = $(this).attr('data-slot-index');
-        const actionbarIndex = $(this).attr('data-actionbar-id');
+        const actionbarIndex = $(this).attr('data-actionbar-index');
 
         // Create a custom context menu (e.g., for editing, deleting items)
         showContextMenu(e, actionbarIndex, slotIndex);
@@ -55,11 +55,12 @@ $(async function () {
         e.preventDefault(); // Prevent the default context menu from appearing
 
         const slotIndex = $(this).attr('data-slot-index');
-        const actionbarIndex = $(this).attr('data-actionbar-id');
+        const actionbarIndex = $(this).attr('data-actionbar-index');
         const profileName = $('#profileDropdown').text();
+        const actionIndex = $(this).attr('data-action-index');
 
-        itemFetcher.fetchItemActions(profileName, actionbarIndex, slotIndex).then((actions) => {
-            showContextMenu(e, actionbarIndex, slotIndex, actions);
+        itemFetcher.fetchItemActions(profileName, actionbarIndex, slotIndex, actionIndex).then((actions) => {
+            showContextMenu(e, actionbarIndex, slotIndex, actions, actionIndex);
         });
 
     });
@@ -75,7 +76,7 @@ $(async function () {
         }
 
         let profileName = $element.attr('data-profile-name');
-        let actionbarId = $element.attr('data-actionbar-id');
+        let actionbarId = $element.attr('data-actionbar-index');
         let slotIndex = $element.attr('data-slot-index');
 
         $element.find('.keybind').after('<div class="spinner-border text-primary" role="status" style="width:15px; height:15px;"><span class="visually-hidden">Loading...</span></div>');
@@ -86,14 +87,15 @@ $(async function () {
             );
 
             Promise.all(promises).then(actionsWithImages => {
+                console.log(actionsWithImages);
                 let actionbarSlotHtml = actionsWithImages.map(action => `
-                    <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle sub-slot-container center-block border border-2 rounded py-2 cursor-pointer"
+                    <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle ${action.type} sub-slot-container border border-2 rounded py-2 cursor-pointer"
                         data-actionbar-index="${actionbarId}" 
                         data-slot-index="${slotIndex}"
                         data-action-index="${action.actionIndex}"
                         style="max-width:130px;">
                             <img src="${action.imageLink}" alt="Unknown Item (ID: ${action.itemId})">
-                            <div>${action.flavourText}</div>
+                            <div class="flavour-text">${action.flavourText}</div>
                     </div>
                 `).join('');
 
@@ -106,15 +108,15 @@ $(async function () {
     });
 });
 
-function showContextMenu(event, actionbarIndex, slotIndex, inventoryActions = null) {
+function showContextMenu(event, actionbarIndex, slotIndex, inventoryActions = null, actionIndex = -1) {
     // Remove existing context menu if present
     $('.custom-context-menu').remove();
 
     let actionHtml = '';
 
     if (inventoryActions) {
-        actionHtml = inventoryActions.map((action, actionIndex) => `
-            <li class="list-group-item context-menu-item cursor-pointer" data-action="change-action" data-actionbar-id="${actionbarIndex}" data-slot-index="${slotIndex}" data-action-index="${actionIndex}">${action}</li>
+        actionHtml = inventoryActions.map((action) => `
+            <li class="list-group-item context-menu-item cursor-pointer" data-action="change-action" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" data-action-index="${actionIndex}">${action}</li>
         `).join('');
     }
 
@@ -122,8 +124,8 @@ function showContextMenu(event, actionbarIndex, slotIndex, inventoryActions = nu
     const menuHtml = `
     <div class="custom-context-menu" style="position:absolute; top:${event.pageY}px; left:${event.pageX}px; z-index:1000;">
         <ul class="list-group">
-            <li class="list-group-item context-menu-item cursor-pointer" data-action="edit" data-actionbar-id="${actionbarIndex}" data-slot-index="${slotIndex}">Edit Item</li>
-            <li class="list-group-item list-group-item-danger context-menu-item cursor-pointer" data-action="delete" data-actionbar-id="${actionbarIndex}" data-slot-index="${slotIndex}">Delete Item</li>
+            <li class="list-group-item context-menu-item cursor-pointer" data-action="edit" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}">Edit Item</li>
+            <li class="list-group-item list-group-item-danger context-menu-item cursor-pointer" data-action="delete" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}">Delete Item</li>
             ${inventoryActions ? actionHtml : ''}
         </ul>
     </div>
@@ -134,13 +136,24 @@ function showContextMenu(event, actionbarIndex, slotIndex, inventoryActions = nu
     // Handle context menu actions
     $('.context-menu-item').on('click', function () {
         const action = $(this).attr('data-action');
-        const actionbarIndex = $(this).attr('data-actionbar-id');
+        const actionbarIndex = $(this).attr('data-actionbar-index');
         const slotIndex = $(this).attr('data-slot-index');
+        const actionIndex = $(this).attr('data-action-index');
 
         if (action === 'edit') {
             editItem(actionbarIndex, slotIndex);
         } else if (action === 'delete') {
             deleteItem(actionbarIndex, slotIndex);
+        } else if (action === 'change-action') {
+            const newAction = $(this).text();
+            const profileName = $('#profileDropdown').text();
+            profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, newAction, actionIndex).then(() => {
+                if(actionIndex && actionIndex !== undefined && actionIndex !== -1 && actionIndex !== "-1"){
+                    $(`.sub-slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"][data-action-index="${actionIndex}"]`).find('.flavour-text').text(newAction);
+                }else{
+                    $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).find('.flavour-text').text(newAction);
+                }
+            });
         }
 
         // Remove the context menu after action
@@ -239,7 +252,7 @@ async function loadActionbars(profileName) {
         for (var slotIndex in actionbars[actionbarIndex]) {
             var placeholderColumn = `
             <div class="col-auto my-2 my-xxl-0">
-                <div class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container center-block border border-2 rounded p-2 cursor-not-allowed loading-slot" 
+                <div class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-2 cursor-not-allowed loading-slot" 
                      data-actionbar-index="${actionbarIndex}" 
                      data-slot-index="${slotIndex}" 
                      style="width: ${slotWidth}px; height: ${slotHeight}px; opacity: 0.5; pointer-events: none;">
@@ -261,7 +274,7 @@ async function loadActionbars(profileName) {
             promises.push(
                 profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex).then((actionbarSlot) => {
                     var slotColumn = `
-                    <div data-profile-name="${profileName}" data-actionbar-id="${actionbarIndex}" data-slot-index="${slotIndex}" class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 cursor-pointer ${actionbarSlot.type}" style="width: ${slotWidth}px; height: ${slotHeight}px;">
+                    <div data-profile-name="${profileName}" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 cursor-pointer ${actionbarSlot.type}" style="width: ${slotWidth}px; height: ${slotHeight}px;">
                         <img height="${imgHeight}" src="${actionbarSlot.imageLink}" alt="Unknown Item (ID: ${actionbarSlot.itemId})">
                         <div class="flavour-text text-center">${actionbarSlot.flavourText}</div>
                         <div class="keybind text-center">${keyBindsConverted[slotIndex]}</div>

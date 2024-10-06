@@ -95,7 +95,7 @@ class ProfileManager {
         var slot = actionbar[slotIndex];
 
         // Get the action from the slot
-        if (actionIndex !== -1) {
+        if (actionIndex !== "-1" && actionIndex !== -1) {
             slot = slot.actions[actionIndex];
             slot.actionIndex = actionIndex;
         }
@@ -207,6 +207,30 @@ class ProfileManager {
         }
 
         return imageLink;
+    }
+
+    // update ItemItem slot action
+    async updateItemAction(profileName, actionbarIndex, slotIndex, action, actionIndex = -1) {
+        
+        var slot = await this.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex, false, false);
+
+        slot.action = action;
+
+        var profileData = this.getProfile(profileName);
+        var actionbars = this.getActionbars(profileName);
+        var actionbar = this.getActionbar(profileName, actionbarIndex);
+
+        if (actionIndex !== "-1" && actionIndex !== -1) {
+            actionbar[slotIndex].actions[actionIndex] = slot;
+        } else {
+            actionbar[slotIndex] = slot;
+        }
+        
+        actionbars[actionbarIndex] = actionbar;
+
+        profileData[1][0] = actionbars;
+
+        this.saveProfile(profileName, profileData);
     }
 }
 

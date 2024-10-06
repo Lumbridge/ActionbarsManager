@@ -39,12 +39,6 @@
     transition: border 1.0s linear, box-shadow 1.0s linear;
 }
 
-.center-block{
-    display: table;
-    margin-left: auto;
-    margin-right: auto;
-}
-
 .context-menu-item:hover{
     background-color: var(--light-grey);
     color: white;
