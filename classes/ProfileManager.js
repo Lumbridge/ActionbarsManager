@@ -10,6 +10,12 @@ class ProfileManager {
         }
     }
 
+    // export profile as json
+    exportProfile(profileName) {
+        let profileData = this.getProfile(profileName);
+        return JSON.stringify(profileData[1]);
+    }
+    
     // Get a list of profile names
     getProfileNames() {
         let profileData = storage.load(profileKey);

@@ -26,7 +26,7 @@ $(async function () {
                 <label for="json-data">JSON Data</label>
                 <textarea id="json-data" class="form-control" rows="10" placeholder='Paste JSON data here'></textarea>
             </div>
-        `,
+            `,
             buttons: {
                 cancel: { label: "Cancel", className: 'btn-secondary' },
                 save: { label: "Save", className: 'btn-primary', callback: handleJsonImport() }
@@ -105,6 +105,12 @@ $(async function () {
                 initializeSortableContainer($element, profileName, actionbarId, slotIndex);
             });
         });
+    });
+
+    $(document).on("click", "#export-button", function () {
+        const profileName = $(this).attr('data-profile-name');
+        let json = profileManager.exportProfile(profileName);
+        bootbox.alert(`<textarea class="form-control" rows="10">${json}</textarea>`);
     });
 });
 
@@ -300,6 +306,8 @@ async function loadActionbars(profileName) {
             }
         });
     });
+
+    loadExportButton($('#profileDropdown').text());
 }
 
 function handleSlotReorder(profileName, actionbarIndex, oldIndex, newIndex) {
@@ -360,4 +368,11 @@ function handleSlotActionReorder(profileName, actionbarIndex, slotIndex, oldInde
         }
         $parentSlot.find('img').attr('src', $children.first().find('img').attr('src'));
     }
+}
+
+function loadExportButton(profileName){
+    $('#export-button-container').empty();
+    $('#export-button-container').append(`
+        <button class="btn btn-primary" id="export-button" data-profile-name="${profileName}">Export</button>
+    `);
 }
