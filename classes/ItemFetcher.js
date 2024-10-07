@@ -1,4 +1,5 @@
 const cacheRefreshInterval = 30; // 30 days
+const imageBaseUrl = 'https://oldschool.runescape.wiki/images/thumb/${itemName}_detail.png/800px-${itemName}_detail.png';
 
 class ItemFetcher {
     constructor() {
@@ -120,7 +121,7 @@ class ItemFetcher {
             itemName = itemName.replace(/'/g, '%27');
             itemName = itemName.replace(/_100$|_75$|_50$|_25$/, '');
 
-            var imageLink = `${imageBaseUrl}/${itemName}.png`;
+            var imageLink = imageBaseUrl.replaceAll('${itemName}', itemName);
 
             return imageLink;
 
@@ -164,6 +165,29 @@ class ItemFetcher {
             notificationManager.error(`Error fetching actionbar ${actionbarId} slot ${slotIndex} action: ` + error.message);
         }
     }
+
+    async fetchItemActionsById(itemId){
+        try {
+
+            if (itemId === undefined) {
+                return "";
+            }
+
+            var item = await this.fetchItem(itemId);
+
+            // remove null values
+            item.inventoryActions = item.inventoryActions.filter(function (el) {
+                return el != null;
+            });
+
+            return item.inventoryActions;
+
+        } catch (error) {
+            console.log(error);
+            notificationManager.error(`Error fetching item ${itemId} actions: ` + error.message);
+        }
+    }
+
 }
 
 var itemFetcher = new ItemFetcher();

@@ -133,66 +133,6 @@ class ProfileManager {
         return slot;
     }
 
-    // Swap slot locations
-    swapSlots(profileName, actionbarIndex, slotIndex1, slotIndex2) {
-        const profileData = storage.load(profileKey);
-        const actionbars = profileData.find(profile => profile[0] === profileName)[1][0];
-
-        const temp = actionbars[actionbarIndex][slotIndex1];
-        actionbars[actionbarIndex][slotIndex1] = actionbars[actionbarIndex][slotIndex2];
-        actionbars[actionbarIndex][slotIndex2] = temp;
-
-        storage.save(profileKey, profileData);
-    }
-
-    // move slot right with circular shift
-    moveSlotRight(profileName, actionbarIndex, slotIndex) {
-        const profileData = storage.load(profileKey);
-        const actionbars = profileData.find(profile => profile[0] === profileName)[1][0];
-        const actionbar = actionbars[actionbarIndex];
-        const actionbarLength = actionbar.length;
-
-        if (slotIndex < actionbarLength - 1) {
-            // Swap the current slot with the next slot
-            const temp = actionbar[slotIndex];
-            actionbar[slotIndex] = actionbar[slotIndex + 1];
-            actionbar[slotIndex + 1] = temp;
-        } else {
-            // Circular shift: move the last item to the first position
-            const lastItem = actionbar[actionbarLength - 1];
-            for (let i = actionbarLength - 1; i > 0; i--) {
-                actionbar[i] = actionbar[i - 1]; // Shift all items right
-            }
-            actionbar[0] = lastItem; // Put the last item at the first position
-        }
-
-        storage.save(profileKey, profileData);
-    }
-
-    // move slot left with circular shift
-    moveSlotLeft(profileName, actionbarIndex, slotIndex) {
-        const profileData = storage.load(profileKey);
-        const actionbars = profileData.find(profile => profile[0] === profileName)[1][0];
-        const actionbar = actionbars[actionbarIndex];
-        const actionbarLength = actionbar.length;
-
-        if (slotIndex > 0) {
-            // Swap the current slot with the previous slot
-            const temp = actionbar[slotIndex];
-            actionbar[slotIndex] = actionbar[slotIndex - 1];
-            actionbar[slotIndex - 1] = temp;
-        } else {
-            // Circular shift: move the first item to the last position
-            const firstItem = actionbar[0];
-            for (let i = 0; i < actionbarLength - 1; i++) {
-                actionbar[i] = actionbar[i + 1]; // Shift all items left
-            }
-            actionbar[actionbarLength - 1] = firstItem; // Put the first item at the last position
-        }
-
-        storage.save(profileKey, profileData);
-    }
-
     async getImageLink(type, actionbarSlot) {
 
         var imageLink = "";
@@ -216,11 +156,15 @@ class ProfileManager {
     }
 
     // update ItemItem slot action
-    async updateItemAction(profileName, actionbarIndex, slotIndex, action, actionIndex = -1) {
+    async updateItemAction(profileName, actionbarIndex, slotIndex, action, actionIndex = -1, itemId = -1) {
         
         var slot = await this.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex, false, false);
 
         slot.action = action;
+
+        if(itemId !== -1){
+            slot.itemId = itemId;
+        }
 
         var profileData = this.getProfile(profileName);
         var actionbars = this.getActionbars(profileName);

@@ -1,3 +1,6 @@
+let currentPage = 1;
+let totalPages = 1;
+
 $(async function () {
 
     initTooltips();
@@ -87,14 +90,13 @@ $(async function () {
             );
 
             Promise.all(promises).then(actionsWithImages => {
-                console.log(actionsWithImages);
                 let actionbarSlotHtml = actionsWithImages.map(action => `
                     <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle ${action.type} sub-slot-container border border-2 rounded py-2 cursor-pointer"
                         data-actionbar-index="${actionbarId}" 
                         data-slot-index="${slotIndex}"
                         data-action-index="${action.actionIndex}"
                         style="max-width:130px;">
-                            <img src="${action.imageLink}" alt="Unknown Item (ID: ${action.itemId})">
+                            <img class="slot-image" src="${action.imageLink}" alt="Unknown Item (ID: ${action.itemId})">
                             <div class="flavour-text">${action.flavourText}</div>
                     </div>
                 `).join('');
@@ -111,6 +113,51 @@ $(async function () {
         const profileName = $(this).attr('data-profile-name');
         let json = profileManager.exportProfile(profileName);
         bootbox.alert(`<textarea class="form-control" rows="10">${json}</textarea>`);
+    });
+
+    $(document).on("click", ".search-result-item", function () {
+        const profileName = $('#profileDropdown').text();
+        const actionbarIndex = $(this).attr('data-actionbar-index');
+        const slotIndex = $(this).attr('data-slot-index');
+        const actionIndex = $(this).attr('data-action-index');
+        const itemId = $(this).attr('data-item-id');
+        const imageLink = $(this).find('.search-image').attr('src');
+
+        itemFetcher.fetchItemActionsById(itemId).then((actions) => {
+           if(actions.length === 1){
+                profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, actions[0], actionIndex).then(() => {
+                     uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, actions[0]);
+                     uiManager.setSlotImage(actionbarIndex, slotIndex, imageLink);
+                });
+           }else{
+                bootbox.dialog({
+                    title: 'Select Action',
+                    message: `
+                        <div class="form-group">
+                            <label for="action-select">Select an action</label>
+                            <select id="action-select" class="form-control">
+                                ${actions.map(action => `<option value="${action}">${action}</option>`).join('')}
+                            </select>
+                        </div>
+                    `,
+                    buttons: {
+                        cancel: { label: "Cancel", className: 'btn-secondary' },
+                        save: {
+                            label: "Save",
+                            className: 'btn-primary',
+                            callback: function () {
+                                const selectedAction = $('#action-select').val();
+                                profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, selectedAction, actionIndex, itemId).then(() => {
+                                    uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
+                                    uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
+                                    bootbox.hideAll();
+                                });
+                            }
+                        }
+                    }
+                });
+           }
+        });
     });
 });
 
@@ -130,8 +177,8 @@ function showContextMenu(event, actionbarIndex, slotIndex, inventoryActions = nu
     const menuHtml = `
     <div class="custom-context-menu" style="position:absolute; top:${event.pageY}px; left:${event.pageX}px; z-index:1000;">
         <ul class="list-group">
-            <li class="list-group-item context-menu-item cursor-pointer" data-action="edit" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}">Edit Item</li>
-            <li class="list-group-item list-group-item-danger context-menu-item cursor-pointer" data-action="delete" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}">Delete Item</li>
+            <li class="list-group-item context-menu-item cursor-pointer" data-action="edit" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" data-action-index="${actionIndex}">Edit Item</li>
+            <li class="list-group-item list-group-item-danger context-menu-item cursor-pointer" data-action="delete" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" data-action-index="${actionIndex}">Delete Item</li>
             ${inventoryActions ? actionHtml : ''}
         </ul>
     </div>
@@ -147,18 +194,14 @@ function showContextMenu(event, actionbarIndex, slotIndex, inventoryActions = nu
         const actionIndex = $(this).attr('data-action-index');
 
         if (action === 'edit') {
-            editItem(actionbarIndex, slotIndex);
+            editItem(actionbarIndex, slotIndex, actionIndex);
         } else if (action === 'delete') {
             deleteItem(actionbarIndex, slotIndex);
         } else if (action === 'change-action') {
             const newAction = $(this).text();
             const profileName = $('#profileDropdown').text();
             profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, newAction, actionIndex).then(() => {
-                if(actionIndex && actionIndex !== undefined && actionIndex !== -1 && actionIndex !== "-1"){
-                    $(`.sub-slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"][data-action-index="${actionIndex}"]`).find('.flavour-text').text(newAction);
-                }else{
-                    $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).find('.flavour-text').text(newAction);
-                }
+                uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, newAction);
             });
         }
 
@@ -172,9 +215,108 @@ function showContextMenu(event, actionbarIndex, slotIndex, inventoryActions = nu
     });
 }
 
-function editItem(actionbarIndex, slotIndex) {
-    // Logic to edit item in the slot
-    alert(`Edit action triggered for actionbar: ${actionbarIndex}, slot: ${slotIndex}`);
+function editItem(actionbarIndex, slotIndex, actionIndex = -1) {
+
+    // Show the Bootbox modal
+    bootbox.dialog({
+        title: 'Search Items',
+        message: `
+            <div>
+                <input type="text" id="searchBox" class="form-control" placeholder="Type at least 3 characters to search...">
+                <ul id="resultsList" class="list-group mt-3"></ul>
+                <div class="mt-3" id="paginationButtons"></div>
+            </div>
+        `,
+        closeButton: true
+    });
+
+    $(document).off('input', '#searchBox');
+    $(document).off('click', '#prevPage');
+    $(document).off('click', '#nextPage');
+
+    let searchResults = []; // Store the full results
+
+    let typingTimer;                 // Timer identifier
+    const typingDelay = 750;         // Delay in milliseconds (0.75 seconds)
+
+    // Handle typing in the search box
+    $(document).on('input', '#searchBox', function () {
+        const query = $(this).val(); // Get the current input value
+
+        // Clear the previous timer
+        clearTimeout(typingTimer);
+
+        if (query.length >= 3) {
+            // Set a new timer for the delay
+            typingTimer = setTimeout(() => {
+                // Call the search function after the delay
+                indexedDBHelper.searchByItemName(query).then(results => {
+                    searchResults = results; // Store the full results
+                    renderResults(searchResults, 1, actionbarIndex, slotIndex, actionIndex); // Render the first page of results
+                });
+            }, typingDelay); // Wait 300ms before triggering the search
+        } else {
+            $('#resultsList').empty(); // Clear results if less than 3 characters are typed
+            $('#paginationButtons').empty(); // Clear pagination buttons
+        }
+    });
+
+    // Handle pagination button clicks
+    $(document).on('click', '#prevPage', function () {
+        if (currentPage > 1) {
+            renderResults(searchResults, currentPage - 1, actionbarIndex, slotIndex, actionIndex);
+        }
+    });
+
+    $(document).on('click', '#nextPage', function () {
+        if (currentPage < totalPages) {
+            renderResults(searchResults, currentPage + 1, actionbarIndex, slotIndex, actionIndex);
+        }
+    });
+
+}
+
+// Function to render paginated results
+function renderResults(results, page, actionbarIndex, slotIndex, actionIndex) {
+
+    const ITEMS_PER_PAGE = 10; // Number of items per page
+
+    const resultsList = $('#resultsList');
+    resultsList.empty(); // Clear previous results
+
+    totalPages = Math.ceil(results.length / ITEMS_PER_PAGE); // Calculate total pages
+    currentPage = page; // Set the current page
+
+    // Get the results for the current page
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    const paginatedResults = results.slice(start, end);
+
+    if (paginatedResults.length > 0) {
+        paginatedResults.forEach(item => {
+            itemFetcher.fetchItemImage(item.id).then((image) => {
+                resultsList.append(`<li data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" data-action-index="${actionIndex}" data-item-id=${item.id} class="search-result-item list-group-item cursor-pointer"><img class="search-image" src="${image}"></img> ${item.name}</li>`);
+            });
+        });
+    } else {
+        resultsList.append('<li class="list-group-item text-muted">No results found</li>');
+    }
+
+    // Update pagination buttons
+    updatePaginationButtons();
+}
+
+// Function to update pagination buttons
+function updatePaginationButtons() {
+    $('#paginationButtons').empty(); // Clear previous buttons
+
+    const prevDisabled = currentPage === 1 ? 'disabled' : '';
+    const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+
+    $('#paginationButtons').append(`
+        <button class="btn btn-secondary me-2" id="prevPage" ${prevDisabled}>Previous</button>
+        <button class="btn btn-secondary" id="nextPage" ${nextDisabled}>Next</button>
+    `);
 }
 
 function deleteItem(actionbarIndex, slotIndex) {
@@ -229,9 +371,6 @@ function loadProfileMenuData() {
 
 async function loadActionbars(profileName) {
 
-    const imgHeight = 60;
-    const slotWidth = 130;
-    const slotHeight = 130;
     const spinnerSize = 3.5;
 
     // clear the actionbars container
@@ -261,7 +400,7 @@ async function loadActionbars(profileName) {
                 <div class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-2 cursor-not-allowed loading-slot" 
                      data-actionbar-index="${actionbarIndex}" 
                      data-slot-index="${slotIndex}" 
-                     style="width: ${slotWidth}px; height: ${slotHeight}px; opacity: 0.5; pointer-events: none;">
+                     style="opacity: 0.5; pointer-events: none;">
                     <div class="spinner-border text-primary" role="status" style="width: ${spinnerSize}rem; height: ${spinnerSize}rem;">
                         <span class="visually-hidden">Loading...</span>
                     </div>
@@ -280,8 +419,8 @@ async function loadActionbars(profileName) {
             promises.push(
                 profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex).then((actionbarSlot) => {
                     var slotColumn = `
-                    <div data-profile-name="${profileName}" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 cursor-pointer ${actionbarSlot.type}" style="width: ${slotWidth}px; height: ${slotHeight}px;">
-                        <img height="${imgHeight}" src="${actionbarSlot.imageLink}" alt="Unknown Item (ID: ${actionbarSlot.itemId})">
+                    <div data-profile-name="${profileName}" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 cursor-pointer ${actionbarSlot.type}">
+                        <img class="slot-image" src="${actionbarSlot.imageLink}" alt="Unknown Item (ID: ${actionbarSlot.itemId})">
                         <div class="flavour-text text-center">${actionbarSlot.flavourText}</div>
                         <div class="keybind text-center">${keyBindsConverted[slotIndex]}</div>
                     </div>
@@ -311,7 +450,7 @@ async function loadActionbars(profileName) {
 }
 
 function handleSlotReorder(profileName, actionbarIndex, oldIndex, newIndex) {
-    
+
     const profileData = profileManager.getProfile(profileName);
     const actionbars = profileManager.getActionbars(profileName);
 
@@ -341,7 +480,7 @@ function handleSlotReorder(profileName, actionbarIndex, oldIndex, newIndex) {
 }
 
 function handleSlotActionReorder(profileName, actionbarIndex, slotIndex, oldIndex, newIndex) {
-    
+
     const profileData = profileManager.getProfile(profileName);
     const actionbars = profileManager.getActionbars(profileName);
 
@@ -370,7 +509,7 @@ function handleSlotActionReorder(profileName, actionbarIndex, slotIndex, oldInde
     }
 }
 
-function loadExportButton(profileName){
+function loadExportButton(profileName) {
     $('#export-button-container').empty();
     $('#export-button-container').append(`
         <button class="btn btn-primary" id="export-button" data-profile-name="${profileName}">Export</button>

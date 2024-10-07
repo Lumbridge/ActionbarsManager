@@ -39,12 +39,27 @@
     transition: border 1.0s linear, box-shadow 1.0s linear;
 }
 
-.context-menu-item:hover{
+.list-group-item-danger:hover {
+    background-color: var(--dark-hover-red);
+    color: white;
+}
+
+.list-group-item:hover {
     background-color: var(--light-grey);
     color: white;
 }
 
-.list-group-item-danger:hover {
-    background-color: var(--dark-hover-red);
-    color: white;
+.search-image{
+    max-width: 30px;
+    max-height: 30px;
+}
+
+.slot-image{
+    max-width: 50px;
+    max-height: 50px;
+}
+
+.slot-container{
+    width: 130px;
+    height: 130px;
 }

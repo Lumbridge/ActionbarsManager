@@ -3,7 +3,6 @@ var useProxy = true;
 
 const defaultApiBaseUrl = 'https://osrsplugins.xyz/api';
 const proxyUrl = 'https://cors-proxy.fringe.zone/';
-const imageBaseUrl = 'https://oldschool.runescape.wiki/images';
 
 class EndpointManager {
     constructor() {
