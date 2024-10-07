@@ -5,8 +5,8 @@ class WidgetLookup {
             // other
             { type: 'LastActionItem', wikiName: 'Attack_icon' },
             // orbs
-            { widgetType: 'Toggle run', wikiName: 'Run_energy_orb.gif'},
-            { widgetType: 'Quick prayer', wikiName: 'Activating_quick_prayers.gif'},
+            { widgetType: 'Toggle run', wikiName: 'Run_energy_orb'},
+            { widgetType: 'Quick prayer', wikiName: 'Prayer_icon_(detail)'},
             { widgetType: 'Special attack', wikiName: 'Special_attack_orb'},
             // prayers
             { widgetId: 35454985, wikiName: 'Thick_Skin' },
