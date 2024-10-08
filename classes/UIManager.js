@@ -11,10 +11,6 @@ class UIManager {
         }
     }
 
-    setSlotFlavourText(actionbarIndex, slotIndex, newFlavourText) {
-        $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).find('.flavour-text').text(newFlavourText);
-    }
-
     setSlotImage(actionbarIndex, slotIndex, actionIndex, newImageLink) {
         if (actionIndex && actionIndex !== undefined && actionIndex !== -1 && actionIndex !== "-1") {
 

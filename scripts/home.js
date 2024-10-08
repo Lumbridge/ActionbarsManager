@@ -94,9 +94,8 @@ $(async function () {
                     <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle ${action.type} sub-slot-container border border-2 rounded py-2 cursor-pointer"
                         data-actionbar-index="${actionbarId}" 
                         data-slot-index="${slotIndex}"
-                        data-action-index="${action.actionIndex}"
-                        style="max-width:130px;">
-                            <img class="slot-image" src="${action.imageLink}" alt="Unknown Item (ID: ${action.itemId})">
+                        data-action-index="${action.actionIndex}">
+                            <img class="slot-image" src="${action.imageLink}" alt="Item #${action.itemId}">
                             <div class="flavour-text">${action.flavourText}</div>
                     </div>
                 `).join('');
@@ -112,10 +111,11 @@ $(async function () {
     $(document).on("click", "#export-button", function () {
         const profileName = $(this).attr('data-profile-name');
         let json = profileManager.exportProfile(profileName);
-        bootbox.alert(`<textarea class="form-control" rows="10">${json}</textarea>`);
+        bootbox.alert(`<textarea class="form-control" rows="20">${json}</textarea>`);
     });
 
     $(document).on("click", ".search-result-item", function () {
+
         const profileName = $('#profileDropdown').text();
         const actionbarIndex = $(this).attr('data-actionbar-index');
         const slotIndex = $(this).attr('data-slot-index');
@@ -124,15 +124,68 @@ $(async function () {
         const imageLink = $(this).find('.search-image').attr('src');
 
         itemFetcher.fetchItemActionsById(itemId).then((actions) => {
-           if(actions.length === 1){
+
+            if (actions.length === 1) {
+
                 profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, actions[0], actionIndex).then(() => {
-                     uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, actions[0]);
-                     uiManager.setSlotImage(actionbarIndex, slotIndex, imageLink);
+                    uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, actions[0]);
+                    uiManager.setSlotImage(actionbarIndex, slotIndex, imageLink);
                 });
-           }else{
-                bootbox.dialog({
-                    title: 'Select Action',
-                    message: `
+
+            } else {
+
+                showActionSelectionDialog(actions, profileName, actionbarIndex, slotIndex, itemId, actionIndex, imageLink);
+
+            }
+        });
+    });
+
+    $(document).on("click", ".add-new-slot", function () {
+
+        var actionbarIndex = $(this).attr('data-actionbar-index');
+        var slotIndex = $(this).attr('data-slot-index');
+
+        // show a context menu to select the type of slot to add: options are Item, Prayer, Spellbook and Compound
+        bootbox.dialog({
+            title: 'Add New Slot',
+            message: `
+                <div class="form-group">
+                    <label for="slot-type-select">Select Slot Type</label>
+                    <select id="slot-type-select" class="form-control">
+                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="ItemItem">Item</option>
+                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="PrayerItem">Prayer</option>
+                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="SpellbookItem">Spellbook</option>
+                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="CompoundItem">Compound</option>
+                    </select>
+                </div>
+            `,
+            buttons: {
+                cancel: { label: "Cancel", className: 'btn-secondary' },
+                save: {
+                    label: "Choose",
+                    className: 'btn-primary',
+                    callback: function () {
+
+                        const profileName = $('#profileDropdown').text();
+                        const selectedType = $('#slot-type-select').val();
+
+                        if(selectedType === "ItemItem") {
+                            showItemSearchModal(actionbarIndex, slotIndex);
+                        } else {
+                        
+                        }
+                    }
+                }
+            }
+        });
+
+    });
+});
+
+function showActionSelectionDialog(actions, profileName, actionbarIndex, slotIndex, itemId, actionIndex, imageLink) {
+    bootbox.dialog({
+        title: 'Select Action',
+        message: `
                         <div class="form-group">
                             <label for="action-select">Select an action</label>
                             <select id="action-select" class="form-control">
@@ -140,26 +193,35 @@ $(async function () {
                             </select>
                         </div>
                     `,
-                    buttons: {
-                        cancel: { label: "Cancel", className: 'btn-secondary' },
-                        save: {
-                            label: "Save",
-                            className: 'btn-primary',
-                            callback: function () {
-                                const selectedAction = $('#action-select').val();
-                                profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, selectedAction, actionIndex, itemId).then(() => {
-                                    uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
-                                    uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
-                                    bootbox.hideAll();
-                                });
-                            }
-                        }
+        buttons: {
+            cancel: { label: "Cancel", className: 'btn-secondary' },
+            save: {
+                label: "Save",
+                className: 'btn-primary',
+                callback: function () {
+                    const selectedAction = $('#action-select').val();
+
+                    var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
+                    slotIndex = parseInt(slotIndex);
+                    
+                    if (slotIndex === actionbar.length) {
+                        // this is a new item
+                        profileManager.addItemToActionbar(profileName, "ItemItem", actionbarIndex, slotIndex, -1, itemId, selectedAction).then(() => {
+                            uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
+                        });
+                    } else {
+
+                        profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, selectedAction, actionIndex, itemId).then(() => {
+                            uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
+                            uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
+                            bootbox.hideAll();
+                        });
                     }
-                });
-           }
-        });
+                }
+            }
+        }
     });
-});
+}
 
 function showContextMenu(event, actionbarIndex, slotIndex, inventoryActions = null, actionIndex = -1) {
     // Remove existing context menu if present
@@ -194,7 +256,7 @@ function showContextMenu(event, actionbarIndex, slotIndex, inventoryActions = nu
         const actionIndex = $(this).attr('data-action-index');
 
         if (action === 'edit') {
-            editItem(actionbarIndex, slotIndex, actionIndex);
+            showItemSearchModal(actionbarIndex, slotIndex, actionIndex);
         } else if (action === 'delete') {
             deleteItem(actionbarIndex, slotIndex);
         } else if (action === 'change-action') {
@@ -215,7 +277,7 @@ function showContextMenu(event, actionbarIndex, slotIndex, inventoryActions = nu
     });
 }
 
-function editItem(actionbarIndex, slotIndex, actionIndex = -1) {
+function showItemSearchModal(actionbarIndex, slotIndex, actionIndex = -1) {
 
     // Show the Bootbox modal
     bootbox.dialog({
@@ -237,7 +299,7 @@ function editItem(actionbarIndex, slotIndex, actionIndex = -1) {
     let searchResults = []; // Store the full results
 
     let typingTimer;                 // Timer identifier
-    const typingDelay = 750;         // Delay in milliseconds (0.75 seconds)
+    const typingDelay = 300;         // Delay in milliseconds (0.75 seconds)
 
     // Handle typing in the search box
     $(document).on('input', '#searchBox', function () {
@@ -252,7 +314,7 @@ function editItem(actionbarIndex, slotIndex, actionIndex = -1) {
                 // Call the search function after the delay
                 indexedDBHelper.searchByItemName(query).then(results => {
                     searchResults = results; // Store the full results
-                    renderResults(searchResults, 1, actionbarIndex, slotIndex, actionIndex); // Render the first page of results
+                    renderPaginatedSearchResults(searchResults, 1, actionbarIndex, slotIndex, actionIndex); // Render the first page of results
                 });
             }, typingDelay); // Wait 300ms before triggering the search
         } else {
@@ -264,20 +326,20 @@ function editItem(actionbarIndex, slotIndex, actionIndex = -1) {
     // Handle pagination button clicks
     $(document).on('click', '#prevPage', function () {
         if (currentPage > 1) {
-            renderResults(searchResults, currentPage - 1, actionbarIndex, slotIndex, actionIndex);
+            renderPaginatedSearchResults(searchResults, currentPage - 1, actionbarIndex, slotIndex, actionIndex);
         }
     });
 
     $(document).on('click', '#nextPage', function () {
         if (currentPage < totalPages) {
-            renderResults(searchResults, currentPage + 1, actionbarIndex, slotIndex, actionIndex);
+            renderPaginatedSearchResults(searchResults, currentPage + 1, actionbarIndex, slotIndex, actionIndex);
         }
     });
 
 }
 
 // Function to render paginated results
-function renderResults(results, page, actionbarIndex, slotIndex, actionIndex) {
+function renderPaginatedSearchResults(results, page, actionbarIndex, slotIndex, actionIndex) {
 
     const ITEMS_PER_PAGE = 10; // Number of items per page
 
@@ -418,11 +480,18 @@ async function loadActionbars(profileName) {
         for (let slotIndex in actionbars[actionbarIndex]) {
             promises.push(
                 profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex).then((actionbarSlot) => {
+                    
+                    let keybind = keyBindsConverted[slotIndex];
+
+                    if(keybind === undefined){
+                        keybind = "no keybind";
+                    }
+
                     var slotColumn = `
-                    <div data-profile-name="${profileName}" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 cursor-pointer ${actionbarSlot.type}">
-                        <img class="slot-image" src="${actionbarSlot.imageLink}" alt="Unknown Item (ID: ${actionbarSlot.itemId})">
+                    <div data-profile-name="${profileName}" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 my-1 cursor-pointer ${actionbarSlot.type}">
+                        <img class="slot-image" src="${actionbarSlot.imageLink}" alt="Item #${actionbarSlot.itemId}">
                         <div class="flavour-text text-center">${actionbarSlot.flavourText}</div>
-                        <div class="keybind text-center">${keyBindsConverted[slotIndex]}</div>
+                        <div class="keybind text-center">${keybind}</div>
                     </div>
                     `;
 
@@ -430,6 +499,17 @@ async function loadActionbars(profileName) {
                 })
             );
         }
+
+        var addNewItemSlot = `
+        <div class="col-auto my-2 my-xxl-0">
+            <div class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-2 cursor-pointer add-new-slot" 
+                 data-actionbar-index="${actionbarIndex}" 
+                 data-slot-index="${actionbars[actionbarIndex].length}">
+                <span class="text-muted">Add New Slot</span>
+            </div>
+        </div>`;
+
+        $(`#actionbar-${actionbarIndex}`).append(addNewItemSlot);
     }
 
     await Promise.all(promises);

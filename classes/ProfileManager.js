@@ -16,25 +16,6 @@ class ProfileManager {
         return JSON.stringify(profileData[1]);
     }
     
-    // Get a list of profile names
-    getProfileNames() {
-        let profileData = storage.load(profileKey);
-        return profileData.map(profile => profile[0]);
-    }
-
-    // Get a profile by name
-    getProfile(profileName) {
-        let profileData = storage.load(profileKey);
-        return profileData.find(profile => profile[0] === profileName);
-    }
-
-    saveProfile(profileName, profileData) {
-        let allProfiles = storage.load(profileKey);
-        let profileIndex = allProfiles.findIndex(profile => profile[0] === profileName);
-        allProfiles[profileIndex] = profileData;
-        storage.save(profileKey, allProfiles);
-    }
-
     // Method to import a profile
     importProfile(profileName, jsonData) {
         try {
@@ -79,6 +60,25 @@ class ProfileManager {
         }
     }
 
+    // Get a list of profile names
+    getProfileNames() {
+        let profileData = storage.load(profileKey);
+        return profileData.map(profile => profile[0]);
+    }
+
+    // Get a profile by name
+    getProfile(profileName) {
+        let profileData = storage.load(profileKey);
+        return profileData.find(profile => profile[0] === profileName);
+    }
+
+    saveProfile(profileName, profileData) {
+        let allProfiles = storage.load(profileKey);
+        let profileIndex = allProfiles.findIndex(profile => profile[0] === profileName);
+        allProfiles[profileIndex] = profileData;
+        storage.save(profileKey, allProfiles);
+    }
+
     // Get Actionbars
     getActionbars(profileName) {
         let profileData = this.getProfile(profileName);
@@ -89,6 +89,31 @@ class ProfileManager {
     getActionbar(profileName, actionbarIndex) {
         let actionbars = this.getActionbars(profileName);
         return actionbars[actionbarIndex];
+    }
+
+    // save actionbar
+    saveActionbar(profileName, actionbarIndex, actionbarData) {
+        let actionbars = this.getActionbars(profileName);
+        actionbars[actionbarIndex] = actionbarData;
+        this.saveActionbars(profileName, actionbars);
+    }
+
+    // save actionbars
+    saveActionbars(profileName, actionbars) {
+        let profileData = this.getProfile(profileName);
+        profileData[1][0] = actionbars;
+        this.saveProfile(profileName, profileData);
+    }
+
+    // save actionbar slot
+    saveActionbarSlot(profileName, actionbarIndex, slotIndex, slotData, actionIndex = -1) {
+        let actionbar = this.getActionbar(profileName, actionbarIndex);
+        if (actionIndex !== "-1" && actionIndex !== -1) {
+            actionbar[slotIndex].actions[actionIndex] = slotData;
+        } else {
+            actionbar[slotIndex] = slotData;
+        }
+        this.saveActionbar(profileName, actionbarIndex, actionbar);
     }
 
     // Get Actionbar Slot
@@ -166,21 +191,33 @@ class ProfileManager {
             slot.itemId = itemId;
         }
 
-        var profileData = this.getProfile(profileName);
-        var actionbars = this.getActionbars(profileName);
-        var actionbar = this.getActionbar(profileName, actionbarIndex);
+        this.saveActionbarSlot(profileName, actionbarIndex, slotIndex, slot, actionIndex);
+    }
 
-        if (actionIndex !== "-1" && actionIndex !== -1) {
-            actionbar[slotIndex].actions[actionIndex] = slot;
-        } else {
-            actionbar[slotIndex] = slot;
+    // add a new item to an actionbar
+    addItemToActionbar(profileName, type, actionbarIndex, slotIndex, actionIndex = -1, itemId = -1, action = "") {
+
+        let template = '';
+
+        if(type === "ItemItem") {
+            template = templateProvider.getItemTemplate(false, itemId, action);
+        } else if(type === "PrayerItem") {
+            template = templateProvider.getPrayerTemplate(false, itemId, action);
+        } else if(type === "OrbItem") {
+            template = templateProvider.getOrbTemplate(false, itemId);
+        } else if(type === "SpellbookItem") {
+            template = templateProvider.getSpellbookItemTemplate(itemId);
+        } else if(type === "CompoundItem") {
+            template = templateProvider.getCompoundTemplate();
         }
-        
-        actionbars[actionbarIndex] = actionbar;
 
-        profileData[1][0] = actionbars;
+        var slot = JSON.parse(template);
 
-        this.saveProfile(profileName, profileData);
+        if(actionIndex !== -1){
+            slot.actionIndex = actionIndex;
+        }
+
+        this.saveActionbarSlot(profileName, actionbarIndex, slotIndex, slot, actionIndex);
     }
 }
 
