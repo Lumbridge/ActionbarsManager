@@ -64,7 +64,17 @@
     height: 130px;
 }
 
+.add-new-slot{
+    width: 130px;
+    height: 130px;
+}
+
 .sub-slot-container{
     width: 130px;
     max-height: 130px;
+}
+
+.loading-spinner{
+    width: 3.5rem;
+    height: 3.5rem;
 }

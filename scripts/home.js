@@ -205,10 +205,11 @@ function showActionSelectionDialog(actions, profileName, actionbarIndex, slotInd
                     slotIndex = parseInt(slotIndex);
                     
                     if (slotIndex === actionbar.length) {
-                        // this is a new item
-                        profileManager.addItemToActionbar(profileName, "ItemItem", actionbarIndex, slotIndex, -1, itemId, selectedAction).then(() => {
-                            uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
-                        });
+
+                        profileManager.addItemToActionbar(profileName, "ItemItem", actionbarIndex, slotIndex, -1, itemId, selectedAction);
+                        var slot = profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex);
+                        uiManager.addNewSlot(actionbarIndex, slotIndex, slot);
+
                     } else {
 
                         profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, selectedAction, actionIndex, itemId).then(() => {
@@ -216,6 +217,7 @@ function showActionSelectionDialog(actions, profileName, actionbarIndex, slotInd
                             uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
                             bootbox.hideAll();
                         });
+
                     }
                 }
             }
@@ -390,6 +392,7 @@ function initializeSortableContainer($compoundSlot, profileName, actionbarId, sl
     let sortableContainer = $compoundSlot.next('.actionbar-slot-details')[0];
     new Sortable(sortableContainer, {
         animation: 150,
+        filter: ".add-new-slot",
         onEnd: function (evt) {
             const oldIndex = evt.oldIndex;
             const newIndex = evt.newIndex;
@@ -433,8 +436,6 @@ function loadProfileMenuData() {
 
 async function loadActionbars(profileName) {
 
-    const spinnerSize = 3.5;
-
     // clear the actionbars container
     $('#actionbars-container').empty();
 
@@ -457,17 +458,9 @@ async function loadActionbars(profileName) {
         $('#actionbars-container').append(actionbarRow);
 
         for (var slotIndex in actionbars[actionbarIndex]) {
-            var placeholderColumn = `
-            <div class="col-auto my-2 my-xxl-0">
-                <div class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-2 cursor-not-allowed loading-slot" 
-                     data-actionbar-index="${actionbarIndex}" 
-                     data-slot-index="${slotIndex}" 
-                     style="opacity: 0.5; pointer-events: none;">
-                    <div class="spinner-border text-primary" role="status" style="width: ${spinnerSize}rem; height: ${spinnerSize}rem;">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-            </div>`;
+            
+            var placeholderColumn = templateProvider.getSlotLoadingTemplate(actionbarIndex, slotIndex);
+
             $(`#actionbar-${actionbarIndex}`).append(placeholderColumn);
         }
     }
@@ -487,27 +480,14 @@ async function loadActionbars(profileName) {
                         keybind = "no keybind";
                     }
 
-                    var slotColumn = `
-                    <div data-profile-name="${profileName}" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 my-1 cursor-pointer ${actionbarSlot.type}">
-                        <img class="slot-image" src="${actionbarSlot.imageLink}" alt="Item #${actionbarSlot.itemId}">
-                        <div class="flavour-text text-center">${actionbarSlot.flavourText}</div>
-                        <div class="keybind text-center">${keybind}</div>
-                    </div>
-                    `;
+                    var slotColumn = templateProvider.getSlotTemplate(actionbarIndex, slotIndex, actionbarSlot, keybind, profileName);
 
                     $(`.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).replaceWith(slotColumn);
                 })
             );
         }
 
-        var addNewItemSlot = `
-        <div class="col-auto my-2 my-xxl-0">
-            <div class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-2 cursor-pointer add-new-slot" 
-                 data-actionbar-index="${actionbarIndex}" 
-                 data-slot-index="${actionbars[actionbarIndex].length}">
-                <span class="text-muted">Add New Slot</span>
-            </div>
-        </div>`;
+        var addNewItemSlot = templateProvider.getNewSlotTemplate(actionbarIndex, actionbars[actionbarIndex].length);
 
         $(`#actionbar-${actionbarIndex}`).append(addNewItemSlot);
     }
@@ -520,6 +500,7 @@ async function loadActionbars(profileName) {
 
         new Sortable(this, {
             animation: 150,
+            filter: ".add-new-slot",
             onEnd: function (evt) {
                 handleSlotReorder(profileName, actionbarIndex, evt.oldIndex, evt.newIndex);
             }

@@ -29,6 +29,10 @@ class UIManager {
         }
     }
 
+    addNewSlot(actionbarIndex, slotIndex, slot) {
+        $(`.actionbar[data-actionbar-index="${actionbarIndex}"]`).find('.actionbar-slot-container').append(slot);
+    }
+
 }
 
 var uiManager = new UIManager();
