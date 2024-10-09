@@ -158,6 +158,9 @@ class ItemFetcher {
                 return el != null;
             });
 
+            // add use to inventory actions
+            item.inventoryActions.push("Use");
+
             return item.inventoryActions;
 
         } catch (error) {

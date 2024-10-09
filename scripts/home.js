@@ -52,8 +52,12 @@ $(async function () {
 
         let menuOptions = [{
             text: 'Edit',
-            callback: function(){ showItemSearchModal(actionbarIndex, slotIndex, actionIndex); }
-        }]
+            callback: function(){ modalProvider.showItemSearchModal(actionbarIndex, slotIndex, actionIndex); }
+        },
+        {
+            text: 'Delete',
+            callback: function(){ alert(`Delete item action, actionbar-index: ${actionbarIndex}, slot-index: ${slotIndex}, action-index: ${actionIndex}`); }
+        }];
 
         itemFetcher.fetchItemActions(profileName, actionbarIndex, slotIndex, actionIndex).then((actions) => {
 
@@ -133,7 +137,7 @@ $(async function () {
 
             } else {
 
-                showActionSelectionDialog(actions, profileName, actionbarIndex, slotIndex, itemId, actionIndex, imageLink);
+                modalProvider.showActionSelectionModal(actions, profileName, actionbarIndex, slotIndex, itemId, actionIndex, imageLink);
 
             }
         });
@@ -144,146 +148,10 @@ $(async function () {
         var actionbarIndex = $(this).attr('data-actionbar-index');
         var slotIndex = $(this).attr('data-slot-index');
 
-        // show a context menu to select the type of slot to add: options are Item, Prayer, Spellbook and Compound
-        bootbox.dialog({
-            title: 'Add New Slot',
-            message: `
-                <div class="form-group">
-                    <label for="slot-type-select">Select Slot Type</label>
-                    <select id="slot-type-select" class="form-control">
-                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="ItemItem">Item</option>
-                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="PrayerItem">Prayer</option>
-                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="SpellbookItem">Spellbook</option>
-                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="CompoundItem">Compound</option>
-                    </select>
-                </div>
-            `,
-            buttons: {
-                cancel: { label: "Cancel", className: 'btn-secondary' },
-                save: {
-                    label: "Choose",
-                    className: 'btn-primary',
-                    callback: function () {
-
-                        const profileName = $('#profileDropdown').text();
-                        const selectedType = $('#slot-type-select').val();
-
-                        if(selectedType === "ItemItem") {
-                            showItemSearchModal(actionbarIndex, slotIndex);
-                        } else {
-                        
-                        }
-                    }
-                }
-            }
-        });
+        modalProvider.showAddNewSlotModel(actionbarIndex, slotIndex);
     });
 
 });
-
-function showActionSelectionDialog(actions, profileName, actionbarIndex, slotIndex, itemId, actionIndex, imageLink) {
-    bootbox.dialog({
-        title: 'Select Action',
-        message: `
-                        <div class="form-group">
-                            <label for="action-select">Select an action</label>
-                            <select id="action-select" class="form-control">
-                                ${actions.map(action => `<option value="${action}">${action}</option>`).join('')}
-                            </select>
-                        </div>
-                    `,
-        buttons: {
-            cancel: { label: "Cancel", className: 'btn-secondary' },
-            save: {
-                label: "Save",
-                className: 'btn-primary',
-                callback: function () {
-                    const selectedAction = $('#action-select').val();
-
-                    var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
-                    slotIndex = parseInt(slotIndex);
-                    
-                    if (slotIndex === actionbar.length) {
-
-                        profileManager.addItemToActionbar(profileName, "ItemItem", actionbarIndex, slotIndex, -1, itemId, selectedAction);
-                        var slot = profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex);
-                        uiManager.addNewSlot(actionbarIndex, slotIndex, slot);
-
-                    } else {
-
-                        profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, selectedAction, actionIndex, itemId).then(() => {
-                            uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
-                            uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
-                            bootbox.hideAll();
-                        });
-
-                    }
-                }
-            }
-        }
-    });
-}
-
-function showItemSearchModal(actionbarIndex, slotIndex, actionIndex = -1) {
-
-    // Show the Bootbox modal
-    bootbox.dialog({
-        title: 'Search Items',
-        message: `
-            <div>
-                <input type="text" id="searchBox" class="form-control" placeholder="Type at least 3 characters to search...">
-                <ul id="resultsList" class="list-group mt-3"></ul>
-                <div class="mt-3" id="paginationButtons"></div>
-            </div>
-        `,
-        closeButton: true
-    });
-
-    $(document).off('input', '#searchBox');
-    $(document).off('click', '#prevPage');
-    $(document).off('click', '#nextPage');
-
-    let searchResults = []; // Store the full results
-
-    let typingTimer;                 // Timer identifier
-    const typingDelay = 300;         // Delay in milliseconds (0.75 seconds)
-
-    // Handle typing in the search box
-    $(document).on('input', '#searchBox', function () {
-        const query = $(this).val(); // Get the current input value
-
-        // Clear the previous timer
-        clearTimeout(typingTimer);
-
-        if (query.length >= 3) {
-            // Set a new timer for the delay
-            typingTimer = setTimeout(() => {
-                // Call the search function after the delay
-                indexedDBHelper.searchByItemName(query).then(results => {
-                    searchResults = results; // Store the full results
-                    renderPaginatedSearchResults(searchResults, 1, actionbarIndex, slotIndex, actionIndex); // Render the first page of results
-                });
-            }, typingDelay); // Wait 300ms before triggering the search
-        } else {
-            $('#resultsList').empty(); // Clear results if less than 3 characters are typed
-            $('#paginationButtons').empty(); // Clear pagination buttons
-        }
-    });
-
-    // Handle pagination button clicks
-    $(document).on('click', '#prevPage', function () {
-        if (currentPage > 1) {
-            renderPaginatedSearchResults(searchResults, currentPage - 1, actionbarIndex, slotIndex, actionIndex);
-        }
-    });
-
-    $(document).on('click', '#nextPage', function () {
-        if (currentPage < totalPages) {
-            renderPaginatedSearchResults(searchResults, currentPage + 1, actionbarIndex, slotIndex, actionIndex);
-        }
-    });
-
-}
 
 // Function to render paginated results
 function renderPaginatedSearchResults(results, page, actionbarIndex, slotIndex, actionIndex) {
