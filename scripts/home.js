@@ -41,6 +41,13 @@ $(async function () {
                 uiManager.removeSlot(actionbarIndex, slotIndex);
              },
             css: 'color:red;'
+        },
+        {
+            text: 'Add slot',
+            callback: function(){ 
+                let actionbarLength = profileManager.getActionbar($('#profileDropdown').text(), actionbarIndex).length;
+                modalProvider.showAddNewSlotModal(actionbarIndex, actionbarLength);
+            }
         }]
 
         contextMenuProvider.showContextMenu(e, menuOptions);
@@ -67,14 +74,13 @@ $(async function () {
             css: 'color:red;border-bottom-width:5px;'
         }];
 
-        itemFetcher.fetchItemActions(profileName, actionbarIndex, slotIndex, actionIndex).then((actions) => {
+        itemFetcher.fetchItemActions(actionbarIndex, slotIndex, actionIndex).then((actions) => {
 
             menuOptions.push({
                 text: 'Use',
                 callback: function() { 
-                    const profileName = $('#profileDropdown').text();
                     const action = 'Use';
-                    profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, action, actionIndex).then(() => {
+                    profileManager.updateItemAction(actionbarIndex, slotIndex, action, actionIndex).then(() => {
                         uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
                     });
                 }
@@ -84,8 +90,7 @@ $(async function () {
                 menuOptions.push({
                     text: action,
                     callback: function(){ 
-                        const profileName = $('#profileDropdown').text();
-                        profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, action, actionIndex).then(() => {
+                        profileManager.updateItemAction(actionbarIndex, slotIndex, action, actionIndex).then(() => {
                             uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
                         });
                     }
@@ -122,7 +127,7 @@ $(async function () {
             return;
         }
 
-        let profileName = $element.attr('data-profile-name');
+        let profileName = $('#profileDropdown').text();
         let actionbarIndex = $element.attr('data-actionbar-index');
         let slotIndex = $element.attr('data-slot-index');
 
@@ -135,7 +140,10 @@ $(async function () {
             );
 
             Promise.all(promises).then(actionsWithImages => {
-                let actionbarSlotHtml = actionsWithImages.map(action => htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, action)).join('');
+                let actionbarSlotHtml = '';
+                for (let action of actionsWithImages) {
+                    actionbarSlotHtml += htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, action);
+                }
                 $element.after(`<div class="actionbar-slot-details">${actionbarSlotHtml}</div>`);
                 $element.find('.spinner-border').remove();
                 $element.next('.actionbar-slot-details').slideDown();
@@ -145,14 +153,13 @@ $(async function () {
     });
 
     $(document).on("click", "#export-button", function () {
-        const profileName = $(this).attr('data-profile-name');
+        const profileName = $('#profileDropdown').text();
         let json = profileManager.exportProfile(profileName);
         bootbox.alert(`<textarea class="form-control" rows="20">${json}</textarea>`);
     });
 
     $(document).on("click", ".search-result-item", function () {
 
-        const profileName = $('#profileDropdown').text();
         const actionbarIndex = $(this).attr('data-actionbar-index');
         const slotIndex = $(this).attr('data-slot-index');
         const actionIndex = $(this).attr('data-action-index');
@@ -163,14 +170,14 @@ $(async function () {
 
             if (actions.length === 1) {
 
-                profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, actions[0], actionIndex).then(() => {
+                profileManager.updateItemAction(actionbarIndex, slotIndex, actions[0], actionIndex).then(() => {
                     uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, actions[0]);
                     uiManager.setSlotImage(actionbarIndex, slotIndex, imageLink);
                 });
 
             } else {
 
-                modalProvider.showActionSelectionModal(actions, profileName, actionbarIndex, slotIndex, itemId, actionIndex, imageLink);
+                modalProvider.showActionSelectionModal(actions, actionbarIndex, slotIndex, itemId, actionIndex, imageLink);
 
             }
         });
@@ -181,7 +188,7 @@ $(async function () {
         var actionbarIndex = $(this).attr('data-actionbar-index');
         var slotIndex = $(this).attr('data-slot-index');
 
-        modalProvider.showAddNewSlotModel(actionbarIndex, slotIndex);
+        modalProvider.showAddNewSlotModal(actionbarIndex, slotIndex);
     });
 
 });
@@ -272,7 +279,9 @@ function loadProfileMenuData() {
     notificationManager.info(`Profile menu loaded with ${profileNames.length} profiles`);
 }
 
-async function loadActionbars(profileName) {
+async function loadActionbars() {
+
+    let profileName = profileManager.getCurrentProfileName();
 
     $('#actionbars-container').empty();
 
@@ -283,7 +292,7 @@ async function loadActionbars(profileName) {
 
         var titleNumber = parseInt(actionbarIndex) + 1;
 
-        $('#actionbars-container').append(`<h5>Actionbar ${titleNumber}</h5>`);
+        $('#actionbars-container').append(`<h5>Actionbar ${titleNumber} <button class="btn btn-sm btn-primary add-new-slot" data-actionbar-index="${actionbarIndex}"><i class="fa fa-plus"></i> Add new slot</button> </h5>`);
 
         var actionbarRow = `<div class="row rounded border border-3 p-2 m-1 mb-3 bg-light-subtle actionbar-sortable" id="actionbar-${actionbarIndex}">`;
 
@@ -312,16 +321,12 @@ async function loadActionbars(profileName) {
                         keybind = "no keybind";
                     }
 
-                    var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, actionbarSlot, keybind, profileName);
+                    var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, actionbarSlot);
 
-                    $(`.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).replaceWith(slotHtml);
+                    $(`.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).parent().replaceWith(slotHtml);
                 })
             );
         }
-
-        var addNewItemSlot = htmlTemplateProvider.getNewSlotTemplate(actionbarIndex, actionbars[actionbarIndex].length);
-
-        $(`#actionbar-${actionbarIndex}`).append(addNewItemSlot);
     }
 
     await Promise.all(promises);
@@ -338,8 +343,6 @@ async function loadActionbars(profileName) {
             }
         });
     });
-
-    loadExportButton($('#profileDropdown').text());
 }
 
 function handleSlotReorder(profileName, actionbarIndex, oldIndex, newIndex) {
@@ -382,11 +385,4 @@ function refreshActionbar(actionbarIndex, profileName) {
         }
         $parentSlot.find('img').attr('src', $children.first().find('img').attr('src'));
     }
-}
-
-function loadExportButton(profileName) {
-    $('#export-button-container').empty();
-    $('#export-button-container').append(`
-        <button class="btn btn-primary" id="export-button" data-profile-name="${profileName}">Export</button>
-    `);
 }

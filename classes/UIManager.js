@@ -29,8 +29,8 @@ class UIManager {
         }
     }
 
-    addNewSlot(actionbarIndex, slot) {
-        $(`.actionbar[data-actionbar-index="${actionbarIndex}"]`).find('.actionbar-slot-container').append(slot);
+    addNewSlot(actionbarIndex, slotHtml) {
+        $(`#actionbar-${actionbarIndex}`).append(slotHtml);
     }
 
     removeSlot(actionbarIndex, slotIndex) {

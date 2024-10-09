@@ -69,13 +69,9 @@
     height: 130px;
 }
 
-.add-new-slot{
-    width: 130px;
-    height: 130px;
-}
-
 .sub-slot-container{
     width: 130px;
+    min-height: 70px;
     max-height: 130px;
 }
 

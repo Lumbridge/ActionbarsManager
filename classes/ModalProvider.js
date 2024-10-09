@@ -15,7 +15,9 @@ class ModalProvider {
         });
     }
 
-    showActionSelectionModal(actions, profileName, actionbarIndex, slotIndex, itemId, actionIndex, imageLink) {
+    showActionSelectionModal(actions, actionbarIndex, slotIndex, itemId, actionIndex, imageLink) {
+
+        let profileName = profileManager.getCurrentProfileName();
 
         bootbox.dialog({
             title: 'Select Action',
@@ -32,21 +34,27 @@ class ModalProvider {
                 save: {
                     label: "Save",
                     className: 'btn-primary',
-                    callback: function () {
+                    callback: async function () {
                         const selectedAction = $('#action-select').val();
     
                         var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
+
+                        if (!slotIndex || slotIndex === "undefined"){
+                            slotIndex = actionbar.length;
+                        }
+
                         slotIndex = parseInt(slotIndex);
                         
                         if (slotIndex === actionbar.length) {
     
                             profileManager.addItemToActionbar(profileName, "ItemItem", actionbarIndex, slotIndex, -1, itemId, selectedAction);
-                            var slot = profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex);
-                            uiManager.addNewSlot(actionbarIndex, slot);
+                            var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex);
+                            var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
+                            uiManager.addNewSlot(actionbarIndex, slotHtml);
     
                         } else {
     
-                            profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, selectedAction, actionIndex, itemId).then(() => {
+                            profileManager.updateItemAction(actionbarIndex, slotIndex, selectedAction, actionIndex, itemId).then(() => {
                                 uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
                                 uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
                                 bootbox.hideAll();
@@ -60,7 +68,7 @@ class ModalProvider {
         
     }
 
-    showAddNewSlotModel(actionbarIndex, slotIndex) {
+    showAddNewSlotModal(actionbarIndex, slotIndex) {
         // show a context menu to select the type of slot to add: options are Item, Prayer, Spellbook and Compound
         bootbox.dialog({
             title: 'Add New Slot',
@@ -82,11 +90,10 @@ class ModalProvider {
                     className: 'btn-primary',
                     callback: function () {
 
-                        const profileName = $('#profileDropdown').text();
                         const selectedType = $('#slot-type-select').val();
 
                         if(selectedType === "ItemItem") {
-                            showItemSearchModal(actionbarIndex, slotIndex);
+                            modalProvider.showItemSearchModal(actionbarIndex, slotIndex);
                         } else {
                         
                         }

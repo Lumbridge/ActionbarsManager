@@ -3,12 +3,21 @@ class HtmlTemplateProvider {
         
     }
 
-    getSlotTemplate(actionbarIndex, slotIndex, actionbarSlot, keybind, profileName) {
+    getSlotTemplate(actionbarIndex, slotIndex, actionbarSlot) {
+
+        if(!actionbarSlot){
+            actionbarSlot = profileManager.getActionbarSlot(profileManager.getCurrentProfileName(), actionbarIndex, slotIndex);
+        }
+
+        let keybind = keybindManager.getSlotKeybind(profileManager.getCurrentProfileName(), slotIndex);
+
         return `
-            <div data-profile-name="${profileName}" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 my-1 cursor-pointer ${actionbarSlot.type}">
-                <img class="slot-image" src="${actionbarSlot.imageLink}" alt="Item #${actionbarSlot.itemId}">
-                <div class="flavour-text text-center">${actionbarSlot.flavourText}</div>
-                <div class="keybind text-center">${keybind}</div>
+            <div class="col-auto my-2 my-xxl-0">
+                <div data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 my-1 cursor-pointer ${actionbarSlot.type}">
+                    <img class="slot-image" src="${actionbarSlot.imageLink}" alt="Item #${actionbarSlot.itemId}">
+                    <div class="flavour-text text-center">${actionbarSlot.flavourText}</div>
+                    <div class="keybind text-center">${keybind}</div>
+                </div>
             </div>
         `;
     }
@@ -35,18 +44,6 @@ class HtmlTemplateProvider {
                     <div class="spinner-border text-primary loading-spinner" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                </div>
-            </div>
-        `;
-    }
-
-    getNewSlotTemplate(actionbarIndex, slotIndex) {
-        return `
-            <div class="col-auto my-2 my-xxl-0">
-                <div class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-2 my-1 cursor-pointer add-new-slot" 
-                    data-actionbar-index="${actionbarIndex}" 
-                    data-slot-index="${slotIndex}">
-                    <span class="text-muted">Add New Slot</span>
                 </div>
             </div>
         `;

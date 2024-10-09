@@ -131,8 +131,10 @@ class ItemFetcher {
         }
     }
 
-    async fetchItemActions(profileName, actionbarId, slotIndex, actionIndex = -1) {
+    async fetchItemActions(actionbarId, slotIndex, actionIndex = -1) {
         try {
+
+            let profileName = profileManager.getCurrentProfileName();
 
             if (actionbarId === undefined || slotIndex === undefined) {
                 return "";

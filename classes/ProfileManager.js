@@ -10,6 +10,10 @@ class ProfileManager {
         }
     }
 
+    getCurrentProfileName() {
+        return $('#profileDropdown').text();
+    }
+
     // export profile as json
     exportProfile(profileName) {
         let profileData = this.getProfile(profileName);
@@ -211,8 +215,10 @@ class ProfileManager {
     }
 
     // update ItemItem slot action
-    async updateItemAction(profileName, actionbarIndex, slotIndex, action, actionIndex = -1, itemId = -1) {
+    async updateItemAction(actionbarIndex, slotIndex, action, actionIndex = -1, itemId = -1) {
         
+        let profileName = this.getCurrentProfileName();
+
         var slot = this.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
 
         slot.action = action;
