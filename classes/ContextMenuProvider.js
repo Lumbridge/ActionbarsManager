@@ -10,11 +10,15 @@ class ContextMenuProvider {
         $('.custom-context-menu').remove();
 
         let menuOptionsHtml = '';
-        if (menuOptions) {
-            menuOptionsHtml = menuOptions.map((text) => `
-            <li class="list-group-item context-menu-item cursor-pointer">${text.text}</li>
-        `).join('');
-        }
+
+        // loop through the menu options and create the html
+        menuOptions.forEach(option => {
+            if(option.css){
+                menuOptionsHtml += `<li class="list-group-item context-menu-item cursor-pointer" style="${option.css}">${option.text}</li>`;
+                return;
+            }
+            menuOptionsHtml += `<li class="list-group-item context-menu-item cursor-pointer">${option.text}</li>`;
+        });
 
         // Create the custom context menu
         const menuHtml = `

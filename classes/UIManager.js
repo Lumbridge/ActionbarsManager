@@ -29,8 +29,13 @@ class UIManager {
         }
     }
 
-    addNewSlot(actionbarIndex, slotIndex, slot) {
+    addNewSlot(actionbarIndex, slot) {
         $(`.actionbar[data-actionbar-index="${actionbarIndex}"]`).find('.actionbar-slot-container').append(slot);
+    }
+
+    removeSlot(actionbarIndex, slotIndex) {
+        $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).parent().remove();
+        refreshActionbar(actionbarIndex, $('#profileDropdown').text());
     }
 
 }

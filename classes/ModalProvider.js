@@ -4,6 +4,17 @@ class ModalProvider {
         
     }
 
+    showPromptModal(promptMessage, callback) {
+        bootbox.prompt({
+            title: promptMessage,
+            callback: function(result) {
+                if (result !== null) {
+                    callback(result);
+                }
+            }
+        });
+    }
+
     showActionSelectionModal(actions, profileName, actionbarIndex, slotIndex, itemId, actionIndex, imageLink) {
 
         bootbox.dialog({
@@ -31,7 +42,7 @@ class ModalProvider {
     
                             profileManager.addItemToActionbar(profileName, "ItemItem", actionbarIndex, slotIndex, -1, itemId, selectedAction);
                             var slot = profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex);
-                            uiManager.addNewSlot(actionbarIndex, slotIndex, slot);
+                            uiManager.addNewSlot(actionbarIndex, slot);
     
                         } else {
     

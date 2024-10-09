@@ -36,7 +36,11 @@ $(async function () {
 
         let menuOptions = [{
             text: 'Delete',
-            callback: function(){ alert(`Delete compound action, actionbar-index: ${actionbarIndex}, slot-index: ${slotIndex}`); }
+            callback: function(){ 
+                profileManager.deleteActionbarSlot($('#profileDropdown').text(), actionbarIndex, slotIndex);
+                uiManager.removeSlot(actionbarIndex, slotIndex);
+             },
+            css: 'color:red;'
         }]
 
         contextMenuProvider.showContextMenu(e, menuOptions);
@@ -56,10 +60,25 @@ $(async function () {
         },
         {
             text: 'Delete',
-            callback: function(){ alert(`Delete item action, actionbar-index: ${actionbarIndex}, slot-index: ${slotIndex}, action-index: ${actionIndex}`); }
+            callback: function(){ 
+                profileManager.deleteActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
+                uiManager.removeSlot(actionbarIndex, slotIndex);
+             },
+            css: 'color:red;border-bottom-width:5px;'
         }];
 
         itemFetcher.fetchItemActions(profileName, actionbarIndex, slotIndex, actionIndex).then((actions) => {
+
+            menuOptions.push({
+                text: 'Use',
+                callback: function() { 
+                    const profileName = $('#profileDropdown').text();
+                    const action = 'Use';
+                    profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, action, actionIndex).then(() => {
+                        uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
+                    });
+                }
+            });
 
             actions.forEach(action => {
                 menuOptions.push({
@@ -71,6 +90,20 @@ $(async function () {
                         });
                     }
                 });
+            });
+
+            menuOptions.push({
+                text: 'Custom Action',
+                callback: function(){ 
+                    const profileName = $('#profileDropdown').text();
+                    modalProvider.showPromptModal("Enter custom action (action must exist in the right click menu for the item when in inventory or equipped)", function(result){
+                        const action = result;
+                        profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, action, actionIndex).then(() => {
+                            uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
+                        });
+                    });
+                },
+                css: 'border-top-width:5px;'
             });
             
             contextMenuProvider.showContextMenu(e, menuOptions);

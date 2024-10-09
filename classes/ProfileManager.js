@@ -249,6 +249,17 @@ class ProfileManager {
 
         this.saveActionbarSlot(profileName, actionbarIndex, slotIndex, slot, actionIndex);
     }
+
+    // delete a slot from the actionbar
+    deleteActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex = -1) {
+        let actionbar = this.getActionbar(profileName, actionbarIndex);
+        if (actionIndex !== -1) {
+            actionbar[slotIndex].actions.splice(actionIndex, 1);
+        } else {
+            actionbar.splice(slotIndex, 1);
+        }
+        this.saveActionbar(profileName, actionbarIndex, actionbar);
+    }
 }
 
 var profileManager = new ProfileManager();
