@@ -59,6 +59,11 @@
     max-height: 50px;
 }
 
+.sub-slot-image{
+    max-width: 110px;
+    max-height: 35px;
+}
+
 .slot-container{
     width: 130px;
     height: 130px;

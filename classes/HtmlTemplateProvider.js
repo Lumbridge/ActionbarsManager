@@ -1,11 +1,7 @@
-class TemplateProvider {
+class HtmlTemplateProvider {
     constructor() {
         
     }
-
-    //
-    // HTML Templates
-    //
 
     getSlotTemplate(actionbarIndex, slotIndex, actionbarSlot, keybind, profileName) {
         return `
@@ -13,6 +9,18 @@ class TemplateProvider {
                 <img class="slot-image" src="${actionbarSlot.imageLink}" alt="Item #${actionbarSlot.itemId}">
                 <div class="flavour-text text-center">${actionbarSlot.flavourText}</div>
                 <div class="keybind text-center">${keybind}</div>
+            </div>
+        `;
+    }
+
+    getChildSlotTemplate(actionbarIndex, slotIndex, action) {
+        return `
+            <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle ${action.type} sub-slot-container border border-2 rounded py-2 cursor-pointer"
+                data-actionbar-index="${actionbarIndex}" 
+                data-slot-index="${slotIndex}"
+                data-action-index="${action.actionIndex}">
+                    <img class="sub-slot-image" src="${action.imageLink}" alt="Item #${action.itemId}">
+                    <div class="flavour-text">${action.flavourText}</div>
             </div>
         `;
     }
@@ -44,66 +52,6 @@ class TemplateProvider {
         `;
     }
 
-    // 
-    // JSON Templates
-    // 
-
-    getItemTemplate(modifier, itemId, action, customSprite = -1) {
-        return `
-            {
-                "type": "ItemItem",
-                "modifier": ${modifier},
-                "itemId": ${itemId},
-                "action": "${action}",
-                "customSprite": ${customSprite}
-            }
-        `;
-    }
-
-    getPrayerTemplate(modifier, widgetId, action, customSprite = -1) {
-        return `
-            {
-                "type": "PrayerItem",
-                "modifier": ${modifier},
-                "widgetId": ${widgetId},
-                "action": "${action}",
-                "customSprite": ${customSprite}
-            }
-        `;
-    }
-
-    getOrbTemplate(modifier, widgetType, customSprite = -1) {
-        return `
-            {
-                "type": "OrbItem",
-                "modifier": ${modifier},
-                "widgetType": "${widgetType}",
-                "customSprite": ${customSprite}
-            }
-        `;
-    }
-
-    getSpellbookItemTemplate(widgetId, customSprite = -1) {
-        return `
-            {
-                "type": "SpellbookItem",
-                "widgetId": ${widgetId},
-                "customSprite": ${customSprite}
-            }
-        `;
-    }
-
-    getCompoundTemplate(name = "Compound action", customSprite = -1) {
-        return `
-            {
-                "type": "CompoundItem",
-                "name": "${name}",
-                "customSprite": ${customSprite},
-                "actions": []
-            }
-        `;
-    }
-
 }
 
-var templateProvider = new TemplateProvider();
+var htmlTemplateProvider = new HtmlTemplateProvider();

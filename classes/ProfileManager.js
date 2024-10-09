@@ -117,7 +117,37 @@ class ProfileManager {
     }
 
     // Get Actionbar Slot
-    async getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex = -1, addApiData = true, addImageLink = true) {
+    getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex = -1) {
+
+        // Get the actionbar
+        let actionbar = this.getActionbar(profileName, actionbarIndex);
+
+        // Get the slot from the actionbar
+        var slot = actionbar[slotIndex];
+
+        // Get the action from the slot
+        if (actionIndex !== "-1" && actionIndex !== -1) {
+            slot = slot.actions[actionIndex];
+            slot.actionIndex = actionIndex;
+        }
+
+        // Set the text for the slot
+        slot.flavourText = slot.name !== undefined ? slot.name : slot.action;
+        if (slot.flavourText === undefined) {
+            slot.flavourText = "";
+        }
+
+        slot.type === 'LastActorItem' ? slot.flavourText = 'Attack Last Actor' : slot.flavourText;
+
+        slot.type === 'PrayerItem' ? slot.flavourText = 'Toggle Prayer' : slot.flavourText;
+
+        slot.type === 'OrbItem' ? slot.flavourText = slot.widgetType : slot.flavourText;
+
+        return slot;
+    }
+
+    // Get Actionbar Slot
+    async getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex = -1, addApiData = true, addImageLink = true) {
 
         // Get the actionbar
         let actionbar = this.getActionbar(profileName, actionbarIndex);
@@ -183,11 +213,11 @@ class ProfileManager {
     // update ItemItem slot action
     async updateItemAction(profileName, actionbarIndex, slotIndex, action, actionIndex = -1, itemId = -1) {
         
-        var slot = await this.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex, false, false);
+        var slot = this.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
 
         slot.action = action;
 
-        if(itemId !== -1){
+        if(itemId !== -1) {
             slot.itemId = itemId;
         }
 
@@ -200,15 +230,15 @@ class ProfileManager {
         let template = '';
 
         if(type === "ItemItem") {
-            template = templateProvider.getItemTemplate(false, itemId, action);
+            template = jsonTemplateProvider.getItemTemplate(false, itemId, action);
         } else if(type === "PrayerItem") {
-            template = templateProvider.getPrayerTemplate(false, itemId, action);
+            template = jsonTemplateProvider.getPrayerTemplate(false, itemId, action);
         } else if(type === "OrbItem") {
-            template = templateProvider.getOrbTemplate(false, itemId);
+            template = jsonTemplateProvider.getOrbTemplate(false, itemId);
         } else if(type === "SpellbookItem") {
-            template = templateProvider.getSpellbookItemTemplate(itemId);
+            template = jsonTemplateProvider.getSpellbookItemTemplate(itemId);
         } else if(type === "CompoundItem") {
-            template = templateProvider.getCompoundTemplate();
+            template = jsonTemplateProvider.getCompoundTemplate();
         }
 
         var slot = JSON.parse(template);

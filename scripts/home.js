@@ -18,23 +18,7 @@ $(async function () {
 
     // Handle the import data button click event
     $(document).on("click", "#import-data", function () {
-        bootbox.dialog({
-            title: 'Import Data',
-            message: `
-            <div class="form-group">
-                <label for="profile-name">Profile Name</label>
-                <input type="text" id="profile-name" class="form-control" placeholder="Enter profile name">
-            </div>
-            <div class="form-group">
-                <label for="json-data">JSON Data</label>
-                <textarea id="json-data" class="form-control" rows="10" placeholder='Paste JSON data here'></textarea>
-            </div>
-            `,
-            buttons: {
-                cancel: { label: "Cancel", className: 'btn-secondary' },
-                save: { label: "Save", className: 'btn-primary', callback: handleJsonImport() }
-            }
-        });
+        modalProvider.showImportProfileModal();
     });
 
     // Handle the profile menu item click event
@@ -45,30 +29,53 @@ $(async function () {
     });
 
     $(document).on("contextmenu", ".CompoundItem", function (e) {
-        e.preventDefault(); // Prevent the default context menu from appearing
+        e.preventDefault();
 
         const slotIndex = $(this).attr('data-slot-index');
         const actionbarIndex = $(this).attr('data-actionbar-index');
 
-        // Create a custom context menu (e.g., for editing, deleting items)
-        showContextMenu(e, actionbarIndex, slotIndex);
+        let menuOptions = [{
+            text: 'Delete',
+            callback: function(){ alert(`Delete compound action, actionbar-index: ${actionbarIndex}, slot-index: ${slotIndex}`); }
+        }]
+
+        contextMenuProvider.showContextMenu(e, menuOptions);
     });
 
     $(document).on("contextmenu", ".ItemItem", function (e) {
-        e.preventDefault(); // Prevent the default context menu from appearing
+        e.preventDefault();
 
         const slotIndex = $(this).attr('data-slot-index');
         const actionbarIndex = $(this).attr('data-actionbar-index');
         const profileName = $('#profileDropdown').text();
         const actionIndex = $(this).attr('data-action-index');
 
+        let menuOptions = [{
+            text: 'Edit',
+            callback: function(){ showItemSearchModal(actionbarIndex, slotIndex, actionIndex); }
+        }]
+
         itemFetcher.fetchItemActions(profileName, actionbarIndex, slotIndex, actionIndex).then((actions) => {
-            showContextMenu(e, actionbarIndex, slotIndex, actions, actionIndex);
+
+            actions.forEach(action => {
+                menuOptions.push({
+                    text: action,
+                    callback: function(){ 
+                        const profileName = $('#profileDropdown').text();
+                        profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, action, actionIndex).then(() => {
+                            uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
+                        });
+                    }
+                });
+            });
+            
+            contextMenuProvider.showContextMenu(e, menuOptions);
         });
 
     });
 
     $(document).on("click", ".CompoundItem", function (e) {
+
         let $element = $(e.target).closest('.CompoundItem');
 
         if ($element.next('.actionbar-slot-details').length > 0) {
@@ -79,31 +86,23 @@ $(async function () {
         }
 
         let profileName = $element.attr('data-profile-name');
-        let actionbarId = $element.attr('data-actionbar-index');
+        let actionbarIndex = $element.attr('data-actionbar-index');
         let slotIndex = $element.attr('data-slot-index');
 
         $element.find('.keybind').after('<div class="spinner-border text-primary" role="status" style="width:15px; height:15px;"><span class="visually-hidden">Loading...</span></div>');
 
-        profileManager.getActionbarSlot(profileName, actionbarId, slotIndex).then((actionbarSlot) => {
+        profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex).then((actionbarSlot) => {
+
             let promises = actionbarSlot.actions.map((action, actionIndex) =>
-                profileManager.getActionbarSlot(profileName, actionbarId, slotIndex, actionIndex)
+                profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex)
             );
 
             Promise.all(promises).then(actionsWithImages => {
-                let actionbarSlotHtml = actionsWithImages.map(action => `
-                    <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle ${action.type} sub-slot-container border border-2 rounded py-2 cursor-pointer"
-                        data-actionbar-index="${actionbarId}" 
-                        data-slot-index="${slotIndex}"
-                        data-action-index="${action.actionIndex}">
-                            <img class="slot-image" src="${action.imageLink}" alt="Item #${action.itemId}">
-                            <div class="flavour-text">${action.flavourText}</div>
-                    </div>
-                `).join('');
-
+                let actionbarSlotHtml = actionsWithImages.map(action => htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, action)).join('');
                 $element.after(`<div class="actionbar-slot-details">${actionbarSlotHtml}</div>`);
                 $element.find('.spinner-border').remove();
                 $element.next('.actionbar-slot-details').slideDown();
-                initializeSortableContainer($element, profileName, actionbarId, slotIndex);
+                initializeSortableContainer($element, profileName, actionbarIndex, slotIndex);
             });
         });
     });
@@ -178,8 +177,8 @@ $(async function () {
                 }
             }
         });
-
     });
+
 });
 
 function showActionSelectionDialog(actions, profileName, actionbarIndex, slotIndex, itemId, actionIndex, imageLink) {
@@ -207,7 +206,7 @@ function showActionSelectionDialog(actions, profileName, actionbarIndex, slotInd
                     if (slotIndex === actionbar.length) {
 
                         profileManager.addItemToActionbar(profileName, "ItemItem", actionbarIndex, slotIndex, -1, itemId, selectedAction);
-                        var slot = profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex);
+                        var slot = profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex);
                         uiManager.addNewSlot(actionbarIndex, slotIndex, slot);
 
                     } else {
@@ -222,60 +221,6 @@ function showActionSelectionDialog(actions, profileName, actionbarIndex, slotInd
                 }
             }
         }
-    });
-}
-
-function showContextMenu(event, actionbarIndex, slotIndex, inventoryActions = null, actionIndex = -1) {
-    // Remove existing context menu if present
-    $('.custom-context-menu').remove();
-
-    let actionHtml = '';
-
-    if (inventoryActions) {
-        actionHtml = inventoryActions.map((action) => `
-            <li class="list-group-item context-menu-item cursor-pointer" data-action="change-action" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" data-action-index="${actionIndex}">${action}</li>
-        `).join('');
-    }
-
-    // Create the custom context menu
-    const menuHtml = `
-    <div class="custom-context-menu" style="position:absolute; top:${event.pageY}px; left:${event.pageX}px; z-index:1000;">
-        <ul class="list-group">
-            <li class="list-group-item context-menu-item cursor-pointer" data-action="edit" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" data-action-index="${actionIndex}">Edit Item</li>
-            <li class="list-group-item list-group-item-danger context-menu-item cursor-pointer" data-action="delete" data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" data-action-index="${actionIndex}">Delete Item</li>
-            ${inventoryActions ? actionHtml : ''}
-        </ul>
-    </div>
-    `;
-
-    $('body').append(menuHtml);
-
-    // Handle context menu actions
-    $('.context-menu-item').on('click', function () {
-        const action = $(this).attr('data-action');
-        const actionbarIndex = $(this).attr('data-actionbar-index');
-        const slotIndex = $(this).attr('data-slot-index');
-        const actionIndex = $(this).attr('data-action-index');
-
-        if (action === 'edit') {
-            showItemSearchModal(actionbarIndex, slotIndex, actionIndex);
-        } else if (action === 'delete') {
-            deleteItem(actionbarIndex, slotIndex);
-        } else if (action === 'change-action') {
-            const newAction = $(this).text();
-            const profileName = $('#profileDropdown').text();
-            profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, newAction, actionIndex).then(() => {
-                uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, newAction);
-            });
-        }
-
-        // Remove the context menu after action
-        $('.custom-context-menu').remove();
-    });
-
-    // Close the context menu if clicked outside
-    $(document).on('click', function () {
-        $('.custom-context-menu').remove();
     });
 }
 
@@ -402,14 +347,6 @@ function initializeSortableContainer($compoundSlot, profileName, actionbarId, sl
     });
 }
 
-function handleJsonImport() {
-    return function () {
-        const profileName = $('#profile-name').val().trim();
-        var jsonData = $('#json-data').val().trim();
-        profileManager.importProfile(profileName, jsonData);
-    };
-}
-
 function loadApiControls() {
     var apiUrlWithoutProxy = endpointManager.getCurrentEndpoint(stripProxy = true);
     $("#api-base-url").val(apiUrlWithoutProxy);
@@ -436,17 +373,11 @@ function loadProfileMenuData() {
 
 async function loadActionbars(profileName) {
 
-    // clear the actionbars container
     $('#actionbars-container').empty();
 
-    // load actionbars
     var actionbars = profileManager.getActionbars(profileName);
+    var keyBinds = keybindManager.getKeybinds(profileName).map(keyCode => keybindManager.convertKeyCode(keyCode));
 
-    var keyBinds = keybindManager.getKeybinds(profileName);
-
-    var keyBindsConverted = keyBinds.map(keyCode => keybindManager.convertKeyCode(keyCode));
-
-    // loop through all actionbars
     for (var actionbarIndex in actionbars) {
 
         var titleNumber = parseInt(actionbarIndex) + 1;
@@ -459,7 +390,7 @@ async function loadActionbars(profileName) {
 
         for (var slotIndex in actionbars[actionbarIndex]) {
             
-            var placeholderColumn = templateProvider.getSlotLoadingTemplate(actionbarIndex, slotIndex);
+            var placeholderColumn = htmlTemplateProvider.getSlotLoadingTemplate(actionbarIndex, slotIndex);
 
             $(`#actionbar-${actionbarIndex}`).append(placeholderColumn);
         }
@@ -472,22 +403,22 @@ async function loadActionbars(profileName) {
     for (let actionbarIndex in actionbars) {
         for (let slotIndex in actionbars[actionbarIndex]) {
             promises.push(
-                profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex).then((actionbarSlot) => {
+                profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex).then((actionbarSlot) => {
                     
-                    let keybind = keyBindsConverted[slotIndex];
+                    let keybind = keyBinds[slotIndex];
 
                     if(keybind === undefined){
                         keybind = "no keybind";
                     }
 
-                    var slotColumn = templateProvider.getSlotTemplate(actionbarIndex, slotIndex, actionbarSlot, keybind, profileName);
+                    var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, actionbarSlot, keybind, profileName);
 
-                    $(`.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).replaceWith(slotColumn);
+                    $(`.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).replaceWith(slotHtml);
                 })
             );
         }
 
-        var addNewItemSlot = templateProvider.getNewSlotTemplate(actionbarIndex, actionbars[actionbarIndex].length);
+        var addNewItemSlot = htmlTemplateProvider.getNewSlotTemplate(actionbarIndex, actionbars[actionbarIndex].length);
 
         $(`#actionbar-${actionbarIndex}`).append(addNewItemSlot);
     }
@@ -512,16 +443,28 @@ async function loadActionbars(profileName) {
 
 function handleSlotReorder(profileName, actionbarIndex, oldIndex, newIndex) {
 
-    const profileData = profileManager.getProfile(profileName);
-    const actionbars = profileManager.getActionbars(profileName);
+    var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
+    var temp = actionbar[oldIndex];
+    actionbar[oldIndex] = actionbar[newIndex];
+    actionbar[newIndex] = temp;
+    profileManager.saveActionbar(profileName, actionbarIndex, actionbar);
 
-    const movedItem = actionbars[actionbarIndex].splice(oldIndex, 1)[0];
-    actionbars[actionbarIndex].splice(newIndex, 0, movedItem);
+    refreshActionbar(actionbarIndex, profileName);
+}
 
-    profileData[1][0] = actionbars;
+function handleSlotActionReorder(profileName, actionbarIndex, slotIndex, oldIndex, newIndex) {
 
-    profileManager.saveProfile(profileName, profileData);
+    var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
+    var actionbarSlot = actionbar[slotIndex];
+    var temp = actionbarSlot.actions[oldIndex];
+    actionbarSlot.actions[oldIndex] = actionbarSlot.actions[newIndex];
+    actionbarSlot.actions[newIndex] = temp;
+    profileManager.saveActionbarSlot(profileName, actionbarIndex, slotIndex, actionbarSlot);
 
+    refreshActionbar(actionbarIndex, profileName);
+}
+
+function refreshActionbar(actionbarIndex, profileName) {
     var $parentSlots = $(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container`);
     for (let i = 0; i < $parentSlots.length; i++) {
 
@@ -530,36 +473,6 @@ function handleSlotReorder(profileName, actionbarIndex, oldIndex, newIndex) {
 
         var keyBind = keybindManager.getSlotKeybind(profileName, i);
         $parentSlot.find('.keybind').text(keyBind);
-
-        var $children = $parentSlots.eq(i).next('.actionbar-slot-details').find('.action-slot');
-        for (let j = 0; j < $children.length; j++) {
-            $children.eq(j).attr('data-slot-index', i);
-            $children.eq(j).attr('data-action-index', j);
-        }
-        $parentSlot.find('img').attr('src', $children.first().find('img').attr('src'));
-    }
-}
-
-function handleSlotActionReorder(profileName, actionbarIndex, slotIndex, oldIndex, newIndex) {
-
-    const profileData = profileManager.getProfile(profileName);
-    const actionbars = profileManager.getActionbars(profileName);
-
-    const actionbarSlot = actionbars[actionbarIndex][slotIndex];
-    const movedAction = actionbarSlot.actions.splice(oldIndex, 1)[0];
-    actionbarSlot.actions.splice(newIndex, 0, movedAction);
-
-    actionbars[actionbarIndex][slotIndex] = actionbarSlot;
-
-    profileData[1][0] = actionbars;
-
-    profileManager.saveProfile(profileName, profileData);
-
-    var $parentSlots = $(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container`);
-    for (let i = 0; i < $parentSlots.length; i++) {
-
-        let $parentSlot = $parentSlots.eq(i);
-        $parentSlot.attr('data-slot-index', i);
 
         var $children = $parentSlots.eq(i).next('.actionbar-slot-details').find('.action-slot');
         for (let j = 0; j < $children.length; j++) {
