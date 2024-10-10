@@ -45,8 +45,7 @@ $(async function () {
         {
             text: 'Add slot',
             callback: function(){ 
-                let actionbarLength = profileManager.getActionbar($('#profileDropdown').text(), actionbarIndex).length;
-                modalProvider.showAddNewSlotModal(actionbarIndex, actionbarLength);
+                modalProvider.showAddNewSlotModal(actionbarIndex, slotIndex);
             }
         }]
 
@@ -69,7 +68,7 @@ $(async function () {
             text: 'Delete',
             callback: function(){ 
                 profileManager.deleteActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
-                uiManager.removeSlot(actionbarIndex, slotIndex);
+                uiManager.removeSlot(actionbarIndex, slotIndex, actionIndex);
              },
             css: 'color:red;border-bottom-width:5px;'
         }];
@@ -100,10 +99,9 @@ $(async function () {
             menuOptions.push({
                 text: 'Custom Action',
                 callback: function(){ 
-                    const profileName = $('#profileDropdown').text();
                     modalProvider.showPromptModal("Enter custom action (action must exist in the right click menu for the item when in inventory or equipped)", function(result){
                         const action = result;
-                        profileManager.updateItemAction(profileName, actionbarIndex, slotIndex, action, actionIndex).then(() => {
+                        profileManager.updateItemAction(actionbarIndex, slotIndex, action, actionIndex).then(() => {
                             uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
                         });
                     });
@@ -119,38 +117,60 @@ $(async function () {
     $(document).on("click", ".CompoundItem", function (e) {
 
         let $element = $(e.target).closest('.CompoundItem');
-
-        if ($element.next('.actionbar-slot-details').length > 0) {
-            $element.next('.actionbar-slot-details').slideUp(function () {
-                $element.next('.actionbar-slot-details').remove();
-            });
+        let $elementChildContainer = $element.next('.actionbar-slot-details');
+        let elementDetailsDisplayed = $elementChildContainer.css('display') !== 'none';
+    
+        // If the slot details already exist and are hidden, slide them down
+        if ($elementChildContainer.length > 0 && !elementDetailsDisplayed) {
+            $elementChildContainer.slideDown();
             return;
         }
-
+    
+        // If the slot details already exist and are shown, toggle them with slideUp
+        if ($elementChildContainer.length > 0 && elementDetailsDisplayed) {
+            $elementChildContainer.slideUp();
+            return;
+        }
+    
         let profileName = $('#profileDropdown').text();
         let actionbarIndex = $element.attr('data-actionbar-index');
         let slotIndex = $element.attr('data-slot-index');
-
+    
+        // Append a spinner while loading
         $element.find('.keybind').after('<div class="spinner-border text-primary" role="status" style="width:15px; height:15px;"><span class="visually-hidden">Loading...</span></div>');
-
-        profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex).then((actionbarSlot) => {
-
-            let promises = actionbarSlot.actions.map((action, actionIndex) =>
-                profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex)
+    
+        // Placeholder HTML structure for slots (before data is loaded)
+        let actionbarSlot = profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex);
+        let actionbarSlotHtml = '';
+        for (let actionIndex = 0; actionIndex < actionbarSlot.actions.length; actionIndex++) {
+            let placeholderColumn = htmlTemplateProvider.getSlotLoadingTemplate(actionbarIndex, actionIndex); // Placeholder template
+            actionbarSlotHtml += placeholderColumn;
+        }
+    
+        // Append placeholders to DOM
+        $element.after(`<div class="actionbar-slot-details">${actionbarSlotHtml}</div>`);
+    
+        // Remove the spinner after adding placeholders
+        $element.find('.spinner-border').remove();
+    
+        let promises = [];
+        for (let actionIndex = 0; actionIndex < actionbarSlot.actions.length; actionIndex++) {
+            promises.push(
+                profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex).then((actionWithImage) => {
+                    let actionHtml = htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, actionWithImage);
+                    
+                    // Replace placeholder with actual slot data
+                    $(`.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${actionIndex}"]`).replaceWith(actionHtml);
+                })
             );
-
-            Promise.all(promises).then(actionsWithImages => {
-                let actionbarSlotHtml = '';
-                for (let action of actionsWithImages) {
-                    actionbarSlotHtml += htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, action);
-                }
-                $element.after(`<div class="actionbar-slot-details">${actionbarSlotHtml}</div>`);
-                $element.find('.spinner-border').remove();
-                $element.next('.actionbar-slot-details').slideDown();
-                initializeSortableContainer($element, profileName, actionbarIndex, slotIndex);
-            });
+        }
+    
+        // Once all promises are resolved, show the content with a slide-down animation
+        Promise.all(promises).then(() => {
+            $element.next('.actionbar-slot-details').slideDown();
+            initializeSortableContainer($element, profileName, actionbarIndex, slotIndex);
         });
-    });
+    });    
 
     $(document).on("click", "#export-button", function () {
         const profileName = $('#profileDropdown').text();
@@ -236,11 +256,6 @@ function updatePaginationButtons() {
     `);
 }
 
-function deleteItem(actionbarIndex, slotIndex) {
-    // Logic to delete item from the slot
-    alert(`Delete action triggered for actionbar: ${actionbarIndex}, slot: ${slotIndex}`);
-}
-
 function initializeSortableContainer($compoundSlot, profileName, actionbarId, slotIndex) {
     let sortableContainer = $compoundSlot.next('.actionbar-slot-details')[0];
     new Sortable(sortableContainer, {
@@ -249,7 +264,7 @@ function initializeSortableContainer($compoundSlot, profileName, actionbarId, sl
         onEnd: function (evt) {
             const oldIndex = evt.oldIndex;
             const newIndex = evt.newIndex;
-            slotIndex = evt.item.getAttribute('data-slot-index');
+            //slotIndex = evt.item.getAttribute('data-slot-index');
             handleSlotActionReorder(profileName, actionbarId, slotIndex, oldIndex, newIndex);
         }
     });
@@ -378,11 +393,13 @@ function refreshActionbar(actionbarIndex, profileName) {
         var keyBind = keybindManager.getSlotKeybind(profileName, i);
         $parentSlot.find('.keybind').text(keyBind);
 
-        var $children = $parentSlots.eq(i).next('.actionbar-slot-details').find('.action-slot');
+        var $children = $parentSlot.next('.actionbar-slot-details').find('.action-slot');
         for (let j = 0; j < $children.length; j++) {
             $children.eq(j).attr('data-slot-index', i);
             $children.eq(j).attr('data-action-index', j);
         }
+
+        // Update the parent slot image to the first child image
         $parentSlot.find('img').attr('src', $children.first().find('img').attr('src'));
     }
 }

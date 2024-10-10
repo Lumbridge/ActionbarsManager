@@ -51,14 +51,27 @@ class ModalProvider {
                             var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex);
                             var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
                             uiManager.addNewSlot(actionbarIndex, slotHtml);
+                            bootbox.hideAll();
     
                         } else {
     
-                            profileManager.updateItemAction(actionbarIndex, slotIndex, selectedAction, actionIndex, itemId).then(() => {
-                                uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
-                                uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
+                            var slot = actionbar[slotIndex];
+
+                            if(slot.type === "CompoundItem") {
+                                slot.actions.push({ action: selectedAction, itemId: itemId, modifier: true, type: "ItemItem" });
+                                actionbar[slotIndex] = slot;
+                                profileManager.saveActionbar(profileName, actionbarIndex, actionbar);
+                                var actionSlot = actionbar[slotIndex].actions[actionbar[slotIndex].actions.length - 1];
+                                var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, actionSlot);
+                                uiManager.addNewSlot(actionbarIndex, slotHtml, slotIndex);
                                 bootbox.hideAll();
-                            });
+                            }else{
+                                profileManager.updateItemAction(actionbarIndex, slotIndex, selectedAction, actionIndex, itemId).then(() => {
+                                    uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
+                                    uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
+                                    bootbox.hideAll();
+                                });
+                            }
     
                         }
                     }

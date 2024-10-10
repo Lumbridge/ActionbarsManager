@@ -73,8 +73,6 @@ class ItemFetcher {
                 return cachedItem;
             }
 
-            console.info(`fetching using ${endpointManager.getCurrentEndpoint()}`);
-
             // Fetch item from API if not in cache
             const response = await fetch(`${endpointManager.getCurrentEndpoint()}/items/${itemId}`);
 
@@ -154,6 +152,10 @@ class ItemFetcher {
             }
 
             var item = await this.fetchItem(itemId);
+
+            if(!item){
+                return [];
+            }
 
             // remove null values
             item.inventoryActions = item.inventoryActions.filter(function (el) {
