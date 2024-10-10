@@ -234,13 +234,7 @@ class WidgetLookup {
             widgetId === 'LastActionItem' ? widget = this.widgets.find(w => w.type === widgetId) : widget = this.widgets.find(w => w.widgetType === widgetId);
         }
         
-        let wikiName = '';
-
-        try{
-            wikiName = widget.wikiName;
-        }catch(e){
-            console.log(e);
-        }
+        let wikiName = widget.wikiName;
 
         if(!wikiName.includes('.')){
             wikiName += '.png';
