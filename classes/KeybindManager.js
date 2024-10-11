@@ -1,9 +1,5 @@
 class KeybindManager {
 
-    constructor() {
-        
-    }
-
     // get keybinds from storage
     getKeybinds(profileName) {
         var profileData = profileManager.getProfile(profileName);

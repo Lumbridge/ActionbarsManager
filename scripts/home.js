@@ -25,7 +25,7 @@ $(async function () {
     $(document).on("click", ".profile-menu-item", async function () {
         const profileName = $(this).attr('id');
         $('#profileDropdown').text(profileName);
-        await loadActionbars(profileName);
+        await loadActionbars();
     });
 
     $(document).on("contextmenu", ".CompoundItem", function (e) {
@@ -54,6 +54,8 @@ $(async function () {
 
     $(document).on("contextmenu", ".ItemItem", function (e) {
         e.preventDefault();
+
+        uiManager.updateActionbarSlots($(this).attr('data-actionbar-index'), $('#profileDropdown').text());
 
         const slotIndex = $(this).attr('data-slot-index');
         const actionbarIndex = $(this).attr('data-actionbar-index');
@@ -116,28 +118,28 @@ $(async function () {
 
     $(document).on("click", ".CompoundItem", function (e) {
 
-        let $element = $(e.target).closest('.CompoundItem');
-        let $elementChildContainer = $element.next('.actionbar-slot-details');
-        let elementDetailsDisplayed = $elementChildContainer.css('display') !== 'none';
+        let $compoundSlot = $(e.target).closest('.CompoundItem');
+        let $compoundSlotChildrenContainer = $compoundSlot.next('.actionbar-slot-details');
+        let elementDetailsDisplayed = $compoundSlotChildrenContainer.css('display') !== 'none';
     
         // If the slot details already exist and are hidden, slide them down
-        if ($elementChildContainer.length > 0 && !elementDetailsDisplayed) {
-            $elementChildContainer.slideDown();
+        if ($compoundSlotChildrenContainer.length > 0 && !elementDetailsDisplayed) {
+            $compoundSlotChildrenContainer.slideDown();
             return;
         }
     
         // If the slot details already exist and are shown, toggle them with slideUp
-        if ($elementChildContainer.length > 0 && elementDetailsDisplayed) {
-            $elementChildContainer.slideUp();
+        if ($compoundSlotChildrenContainer.length > 0 && elementDetailsDisplayed) {
+            $compoundSlotChildrenContainer.slideUp();
             return;
         }
     
         let profileName = $('#profileDropdown').text();
-        let actionbarIndex = $element.attr('data-actionbar-index');
-        let slotIndex = $element.attr('data-slot-index');
+        let actionbarIndex = $compoundSlot.attr('data-actionbar-index');
+        let slotIndex = $compoundSlot.attr('data-slot-index');
     
         // Append a spinner while loading
-        $element.find('.keybind').after('<div class="spinner-border text-primary" role="status" style="width:15px; height:15px;"><span class="visually-hidden">Loading...</span></div>');
+        $compoundSlot.find('.keybind').after('<div class="spinner-border text-primary" role="status" style="width:15px; height:15px;"><span class="visually-hidden">Loading...</span></div>');
     
         // Placeholder HTML structure for slots (before data is loaded)
         let actionbarSlot = profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex);
@@ -148,10 +150,10 @@ $(async function () {
         }
     
         // Append placeholders to DOM
-        $element.after(`<div class="actionbar-slot-details">${actionbarSlotHtml}</div>`);
+        $compoundSlot.after(`<div class="actionbar-slot-details">${actionbarSlotHtml}</div>`);
     
         // Remove the spinner after adding placeholders
-        $element.find('.spinner-border').remove();
+        $compoundSlot.find('.spinner-border').remove();
     
         let promises = [];
         for (let actionIndex = 0; actionIndex < actionbarSlot.actions.length; actionIndex++) {
@@ -167,8 +169,9 @@ $(async function () {
     
         // Once all promises are resolved, show the content with a slide-down animation
         Promise.all(promises).then(() => {
-            $element.next('.actionbar-slot-details').slideDown();
-            initializeSortableContainer($element, profileName, actionbarIndex, slotIndex);
+            $compoundSlot.next('.actionbar-slot-details').slideDown();
+            let sortableContainer = $compoundSlot.next('.actionbar-slot-details')[0];
+            sortableManager.initializeSortableContainer(sortableContainer, actionbarIndex, slotIndex);
         });
     });    
 
@@ -213,6 +216,8 @@ $(async function () {
 
 });
 
+
+
 // Function to render paginated results
 function renderPaginatedSearchResults(results, page, actionbarIndex, slotIndex, actionIndex) {
 
@@ -245,6 +250,7 @@ function renderPaginatedSearchResults(results, page, actionbarIndex, slotIndex, 
 
 // Function to update pagination buttons
 function updatePaginationButtons() {
+    
     $('#paginationButtons').empty(); // Clear previous buttons
 
     const prevDisabled = currentPage === 1 ? 'disabled' : '';
@@ -254,44 +260,44 @@ function updatePaginationButtons() {
         <button class="btn btn-secondary me-2" id="prevPage" ${prevDisabled}>Previous</button>
         <button class="btn btn-secondary" id="nextPage" ${nextDisabled}>Next</button>
     `);
-}
 
-function initializeSortableContainer($compoundSlot, profileName, actionbarId, slotIndex) {
-    let sortableContainer = $compoundSlot.next('.actionbar-slot-details')[0];
-    new Sortable(sortableContainer, {
-        animation: 150,
-        filter: ".add-new-slot",
-        onEnd: function (evt) {
-            const oldIndex = evt.oldIndex;
-            const newIndex = evt.newIndex;
-            //slotIndex = evt.item.getAttribute('data-slot-index');
-            handleSlotActionReorder(profileName, actionbarId, slotIndex, oldIndex, newIndex);
-        }
-    });
 }
 
 function loadApiControls() {
+    
     var apiUrlWithoutProxy = endpointManager.getCurrentEndpoint(stripProxy = true);
+    
     $("#api-base-url").val(apiUrlWithoutProxy);
+    
     $("#use-proxy").prop("checked", useProxy);
+
 }
 
 function initTooltips() {
+    
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+
 }
 
 function loadProfileMenuData() {
+
     const profileNames = profileManager.getProfileNames();
     const profileMenu = $('#profileDropdown ~ .dropdown-menu');
+    
     profileMenu.empty();
+    
     profileNames.forEach(profileName => {
         profileMenu.append(`<a id="${profileName}" class="dropdown-item profile-menu-item cursor-pointer">${profileName}</a>`);
     });
+    
     $('#profileDropdown').text(`Select Profile (${profileNames.length})`);
+    
     notificationManager.info(`Profile menu loaded with ${profileNames.length} profiles`);
+
 }
 
 async function loadActionbars() {
@@ -301,7 +307,6 @@ async function loadActionbars() {
     $('#actionbars-container').empty();
 
     var actionbars = profileManager.getActionbars(profileName);
-    var keyBinds = keybindManager.getKeybinds(profileName).map(keyCode => keybindManager.convertKeyCode(keyCode));
 
     for (var actionbarIndex in actionbars) {
 
@@ -326,80 +331,13 @@ async function loadActionbars() {
     let promises = [];
 
     for (let actionbarIndex in actionbars) {
-        for (let slotIndex in actionbars[actionbarIndex]) {
-            promises.push(
-                profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex).then((actionbarSlot) => {
-                    
-                    let keybind = keyBinds[slotIndex];
-
-                    if(keybind === undefined){
-                        keybind = "no keybind";
-                    }
-
-                    var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, actionbarSlot);
-
-                    $(`.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).parent().replaceWith(slotHtml);
-                })
-            );
-        }
+        uiManager.updateActionbarSlots(actionbarIndex, profileName);
     }
 
     await Promise.all(promises);
 
     $('.actionbar-sortable').each(function () {
         var actionbarIndex = $(this).attr('id').split('-')[1];
-        $(this).find('.slot-container').css('opacity', '1').css('pointer-events', 'auto');
-
-        new Sortable(this, {
-            animation: 150,
-            filter: ".add-new-slot",
-            onEnd: function (evt) {
-                handleSlotReorder(profileName, actionbarIndex, evt.oldIndex, evt.newIndex);
-            }
-        });
+        sortableManager.initializeSortableContainer(this, actionbarIndex);
     });
-}
-
-function handleSlotReorder(profileName, actionbarIndex, oldIndex, newIndex) {
-
-    var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
-    var temp = actionbar[oldIndex];
-    actionbar[oldIndex] = actionbar[newIndex];
-    actionbar[newIndex] = temp;
-    profileManager.saveActionbar(profileName, actionbarIndex, actionbar);
-
-    refreshActionbar(actionbarIndex, profileName);
-}
-
-function handleSlotActionReorder(profileName, actionbarIndex, slotIndex, oldIndex, newIndex) {
-
-    var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
-    var actionbarSlot = actionbar[slotIndex];
-    var temp = actionbarSlot.actions[oldIndex];
-    actionbarSlot.actions[oldIndex] = actionbarSlot.actions[newIndex];
-    actionbarSlot.actions[newIndex] = temp;
-    profileManager.saveActionbarSlot(profileName, actionbarIndex, slotIndex, actionbarSlot);
-
-    refreshActionbar(actionbarIndex, profileName);
-}
-
-function refreshActionbar(actionbarIndex, profileName) {
-    var $parentSlots = $(`.actionbar-sortable#actionbar-${actionbarIndex} .slot-container`);
-    for (let i = 0; i < $parentSlots.length; i++) {
-
-        let $parentSlot = $parentSlots.eq(i);
-        $parentSlot.attr('data-slot-index', i);
-
-        var keyBind = keybindManager.getSlotKeybind(profileName, i);
-        $parentSlot.find('.keybind').text(keyBind);
-
-        var $children = $parentSlot.next('.actionbar-slot-details').find('.action-slot');
-        for (let j = 0; j < $children.length; j++) {
-            $children.eq(j).attr('data-slot-index', i);
-            $children.eq(j).attr('data-action-index', j);
-        }
-
-        // Update the parent slot image to the first child image
-        $parentSlot.find('img').attr('src', $children.first().find('img').attr('src'));
-    }
 }

@@ -1,9 +1,5 @@
 class ContextMenuProvider {
 
-    constructor() {
-
-    }
-
     showContextMenu(rightClickEvent, menuOptions) {
 
         // Remove existing context menu if present

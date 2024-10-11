@@ -1,9 +1,5 @@
 class ModalProvider {
 
-    constructor() {
-        
-    }
-
     showPromptModal(promptMessage, callback) {
         bootbox.prompt({
             title: promptMessage,

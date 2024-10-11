@@ -1,7 +1,4 @@
 class HtmlTemplateProvider {
-    constructor() {
-        
-    }
 
     getSlotTemplate(actionbarIndex, slotIndex, actionbarSlot) {
 
@@ -13,7 +10,9 @@ class HtmlTemplateProvider {
 
         return `
             <div class="col-auto my-2 my-xxl-0">
-                <div data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 my-1 cursor-pointer ${actionbarSlot.type}">
+                <div class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 my-1 cursor-pointer ${actionbarSlot.type}"
+                data-actionbar-index="${actionbarIndex}" 
+                data-slot-index="${slotIndex}">
                     <img class="slot-image" src="${actionbarSlot.imageLink}" alt="Item #${actionbarSlot.itemId}">
                     <div class="flavour-text text-center">${actionbarSlot.flavourText}</div>
                     <div class="keybind text-center">${keybind}</div>

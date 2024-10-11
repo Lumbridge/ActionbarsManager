@@ -1,7 +1,4 @@
 class JsonTemplateProvider {
-    constructor() {
-        
-    }
 
     getItemTemplate(modifier, itemId, action, customSprite = -1) {
         return `

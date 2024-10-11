@@ -74,6 +74,15 @@ class IndexedDBHelper {
         });
     }
 
+    // update an item in indexedDB
+    updateInIndexedDB(storeName, data) {
+        return this.dbPromise.then(db => {
+            const transaction = db.transaction(storeName, 'readwrite');
+            const store = transaction.objectStore(storeName);
+            store.put(data);
+        });
+    }
+
     searchByItemName(itemName) {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open('ItemCacheDB', 1);

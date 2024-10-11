@@ -114,12 +114,20 @@ class ItemFetcher {
                 return "";
             }
 
+            if(item.imageLink){
+                return item.imageLink;
+            }
+
             var itemName = item.name.replace(/ /g, '_');
             itemName = encodeURIComponent(itemName);
             itemName = itemName.replace(/'/g, '%27');
             itemName = itemName.replace(/_100$|_75$|_50$|_25$/, '');
 
             var imageLink = imageBaseUrl.replaceAll('${itemName}', itemName);
+
+            item.imageLink = imageLink;
+
+            indexedDBHelper.updateInIndexedDB('items', item);
 
             return imageLink;
 
