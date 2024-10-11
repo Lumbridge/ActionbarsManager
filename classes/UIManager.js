@@ -92,6 +92,43 @@ class UIManager {
         }
     }
     
+    loadApiControls() {
+    
+        var apiUrlWithoutProxy = endpointManager.getCurrentEndpoint(true);
+        
+        $("#api-base-url").val(apiUrlWithoutProxy);
+        
+        $("#use-proxy").prop("checked", useProxy);
+    
+    }
+    
+    initTooltips() {
+        
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    
+    }
+
+    loadProfileMenuData() {
+
+        const profileNames = profileManager.getProfileNames();
+        const profileMenu = $('#profileDropdown ~ .dropdown-menu');
+        
+        profileMenu.empty();
+        
+        profileNames.forEach(profileName => {
+            profileMenu.append(`<a id="${profileName}" class="dropdown-item profile-menu-item cursor-pointer">${profileName}</a>`);
+        });
+        
+        $('#profileDropdown').text(`Select Profile (${profileNames.length})`);
+        
+        notificationManager.info(`Profile menu loaded with ${profileNames.length} profiles`);
+    
+    }
+
 }
 
 var uiManager = new UIManager();

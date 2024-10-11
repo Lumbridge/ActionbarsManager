@@ -3,7 +3,7 @@ class ModalProvider {
     showPromptModal(promptMessage, callback) {
         bootbox.prompt({
             title: promptMessage,
-            callback: function(result) {
+            callback: function (result) {
                 if (result !== null) {
                     callback(result);
                 }
@@ -14,6 +14,8 @@ class ModalProvider {
     showActionSelectionModal(actions, actionbarIndex, slotIndex, itemId, actionIndex, imageLink) {
 
         let profileName = profileManager.getCurrentProfileName();
+
+        actions.push("Use");
 
         bootbox.dialog({
             title: 'Select Action',
@@ -32,28 +34,28 @@ class ModalProvider {
                     className: 'btn-primary',
                     callback: async function () {
                         const selectedAction = $('#action-select').val();
-    
+
                         var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
 
-                        if (!slotIndex || slotIndex === "undefined"){
+                        if (!slotIndex || slotIndex === "undefined") {
                             slotIndex = actionbar.length;
                         }
 
                         slotIndex = parseInt(slotIndex);
-                        
+
                         if (slotIndex === actionbar.length) {
-    
+
                             profileManager.addItemToActionbar(profileName, "ItemItem", actionbarIndex, slotIndex, -1, itemId, selectedAction);
                             var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex);
                             var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
                             uiManager.addNewSlot(actionbarIndex, slotHtml);
                             bootbox.hideAll();
-    
+
                         } else {
-    
+
                             var slot = actionbar[slotIndex];
 
-                            if(slot.type === "CompoundItem") {
+                            if (slot.type === "CompoundItem") {
                                 slot.actions.push({ action: selectedAction, itemId: itemId, modifier: true, type: "ItemItem" });
                                 actionbar[slotIndex] = slot;
                                 profileManager.saveActionbar(profileName, actionbarIndex, actionbar);
@@ -61,20 +63,20 @@ class ModalProvider {
                                 var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, actionSlot);
                                 uiManager.addNewSlot(actionbarIndex, slotHtml, slotIndex);
                                 bootbox.hideAll();
-                            }else{
+                            } else {
                                 profileManager.updateItemAction(actionbarIndex, slotIndex, selectedAction, actionIndex, itemId).then(() => {
                                     uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
                                     uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
                                     bootbox.hideAll();
                                 });
                             }
-    
+
                         }
                     }
                 }
             }
         });
-        
+
     }
 
     showAddNewSlotModal(actionbarIndex, slotIndex) {
@@ -101,10 +103,10 @@ class ModalProvider {
 
                         const selectedType = $('#slot-type-select').val();
 
-                        if(selectedType === "ItemItem") {
+                        if (selectedType === "ItemItem") {
                             modalProvider.showItemSearchModal(actionbarIndex, slotIndex);
                         } else {
-                        
+
                         }
                     }
                 }
@@ -126,55 +128,54 @@ class ModalProvider {
             `,
             closeButton: true
         });
-    
+
         $(document).off('input', '#searchBox');
         $(document).off('click', '#prevPage');
         $(document).off('click', '#nextPage');
-    
+
         let searchResults = []; // Store the full results
-    
+
         let typingTimer;                 // Timer identifier
-        const typingDelay = 300;         // Delay in milliseconds (0.75 seconds)
-    
+        const typingDelay = 300;         // Delay in milliseconds
+
         // Handle typing in the search box
         $(document).on('input', '#searchBox', function () {
             const query = $(this).val(); // Get the current input value
-    
+
             // Clear the previous timer
             clearTimeout(typingTimer);
-    
+
             if (query.length >= 3) {
                 // Set a new timer for the delay
                 typingTimer = setTimeout(() => {
                     // Call the search function after the delay
                     indexedDBHelper.searchByItemName(query).then(results => {
                         searchResults = results; // Store the full results
-                        renderPaginatedSearchResults(searchResults, 1, actionbarIndex, slotIndex, actionIndex); // Render the first page of results
+                        modalProvider.renderPaginatedSearchResults(searchResults, 1, actionbarIndex, slotIndex, actionIndex); // Render the first page of results
                     });
-                }, typingDelay); // Wait 300ms before triggering the search
+                }, typingDelay); // Wait before triggering the search
             } else {
                 $('#resultsList').empty(); // Clear results if less than 3 characters are typed
                 $('#paginationButtons').empty(); // Clear pagination buttons
             }
         });
-    
-        // Handle pagination button clicks
+
         $(document).on('click', '#prevPage', function () {
             if (currentPage > 1) {
-                renderPaginatedSearchResults(searchResults, currentPage - 1, actionbarIndex, slotIndex, actionIndex);
+                modalProvider.renderPaginatedSearchResults(searchResults, currentPage - 1, actionbarIndex, slotIndex, actionIndex);
             }
         });
-    
+
         $(document).on('click', '#nextPage', function () {
             if (currentPage < totalPages) {
-                renderPaginatedSearchResults(searchResults, currentPage + 1, actionbarIndex, slotIndex, actionIndex);
+                modalProvider.renderPaginatedSearchResults(searchResults, currentPage + 1, actionbarIndex, slotIndex, actionIndex);
             }
         });
-    
-    }
-    
 
-    showImportProfileModal(){
+    }
+
+
+    showImportProfileModal() {
         bootbox.dialog({
             title: 'Import Data',
             message: `
@@ -200,6 +201,48 @@ class ModalProvider {
             var jsonData = $('#json-data').val().trim();
             profileManager.importProfile(profileName, jsonData);
         };
+    }
+
+    renderPaginatedSearchResults(results, page, actionbarIndex, slotIndex, actionIndex) {
+
+        const ITEMS_PER_PAGE = 10; // Number of items per page
+
+        const resultsList = $('#resultsList');
+        resultsList.empty(); // Clear previous results
+
+        totalPages = Math.ceil(results.length / ITEMS_PER_PAGE); // Calculate total pages
+        currentPage = page; // Set the current page
+
+        // Get the results for the current page
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        const end = start + ITEMS_PER_PAGE;
+        const paginatedResults = results.slice(start, end);
+
+        if (paginatedResults.length > 0) {
+            paginatedResults.forEach(item => {
+                itemFetcher.fetchItemImage(item.id).then((image) => {
+                    resultsList.append(`<li data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" data-action-index="${actionIndex}" data-item-id=${item.id} class="search-result-item list-group-item cursor-pointer"><img class="search-image" src="${image}"></img> ${item.name}</li>`);
+                });
+            });
+        } else {
+            resultsList.append('<li class="list-group-item text-muted">No results found</li>');
+        }
+
+        this.updatePaginationButtons();
+    }
+
+    updatePaginationButtons() {
+
+        $('#paginationButtons').empty();
+
+        const prevDisabled = currentPage === 1 ? 'disabled' : '';
+        const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+
+        $('#paginationButtons').append(`
+            <button class="btn btn-secondary me-2" id="prevPage" ${prevDisabled}>Previous</button>
+            <button class="btn btn-secondary" id="nextPage" ${nextDisabled}>Next</button>
+        `);
+
     }
 
 }

@@ -3,11 +3,10 @@ let totalPages = 1;
 
 $(async function () {
 
-    initTooltips();
-    loadApiControls();
-    loadProfileMenuData();
+    uiManager.initTooltips();
+    uiManager.loadApiControls();
+    uiManager.loadProfileMenuData();
 
-    // Handle the set endpoint button click event
     $(document).on("click", "#set-endpoint-button", function () {
         var apiBaseUrlText = $("#api-base-url").val();
         useProxy = $("#use-proxy").is(":checked");
@@ -16,12 +15,10 @@ $(async function () {
         notificationManager.info(`API base URL updated to ${apiBaseUrlText} & use proxy set to ${useProxy}`);
     });
 
-    // Handle the import data button click event
     $(document).on("click", "#import-data", function () {
         modalProvider.showImportProfileModal();
     });
 
-    // Handle the profile menu item click event
     $(document).on("click", ".profile-menu-item", async function () {
         const profileName = $(this).attr('id');
         $('#profileDropdown').text(profileName);
@@ -29,6 +26,7 @@ $(async function () {
     });
 
     $(document).on("contextmenu", ".CompoundItem", function (e) {
+        
         e.preventDefault();
 
         const slotIndex = $(this).attr('data-slot-index');
@@ -53,9 +51,8 @@ $(async function () {
     });
 
     $(document).on("contextmenu", ".ItemItem", function (e) {
+        
         e.preventDefault();
-
-        uiManager.updateActionbarSlots($(this).attr('data-actionbar-index'), $('#profileDropdown').text());
 
         const slotIndex = $(this).attr('data-slot-index');
         const actionbarIndex = $(this).attr('data-actionbar-index');
@@ -215,90 +212,6 @@ $(async function () {
     });
 
 });
-
-
-
-// Function to render paginated results
-function renderPaginatedSearchResults(results, page, actionbarIndex, slotIndex, actionIndex) {
-
-    const ITEMS_PER_PAGE = 10; // Number of items per page
-
-    const resultsList = $('#resultsList');
-    resultsList.empty(); // Clear previous results
-
-    totalPages = Math.ceil(results.length / ITEMS_PER_PAGE); // Calculate total pages
-    currentPage = page; // Set the current page
-
-    // Get the results for the current page
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    const paginatedResults = results.slice(start, end);
-
-    if (paginatedResults.length > 0) {
-        paginatedResults.forEach(item => {
-            itemFetcher.fetchItemImage(item.id).then((image) => {
-                resultsList.append(`<li data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" data-action-index="${actionIndex}" data-item-id=${item.id} class="search-result-item list-group-item cursor-pointer"><img class="search-image" src="${image}"></img> ${item.name}</li>`);
-            });
-        });
-    } else {
-        resultsList.append('<li class="list-group-item text-muted">No results found</li>');
-    }
-
-    // Update pagination buttons
-    updatePaginationButtons();
-}
-
-// Function to update pagination buttons
-function updatePaginationButtons() {
-    
-    $('#paginationButtons').empty(); // Clear previous buttons
-
-    const prevDisabled = currentPage === 1 ? 'disabled' : '';
-    const nextDisabled = currentPage === totalPages ? 'disabled' : '';
-
-    $('#paginationButtons').append(`
-        <button class="btn btn-secondary me-2" id="prevPage" ${prevDisabled}>Previous</button>
-        <button class="btn btn-secondary" id="nextPage" ${nextDisabled}>Next</button>
-    `);
-
-}
-
-function loadApiControls() {
-    
-    var apiUrlWithoutProxy = endpointManager.getCurrentEndpoint(stripProxy = true);
-    
-    $("#api-base-url").val(apiUrlWithoutProxy);
-    
-    $("#use-proxy").prop("checked", useProxy);
-
-}
-
-function initTooltips() {
-    
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-}
-
-function loadProfileMenuData() {
-
-    const profileNames = profileManager.getProfileNames();
-    const profileMenu = $('#profileDropdown ~ .dropdown-menu');
-    
-    profileMenu.empty();
-    
-    profileNames.forEach(profileName => {
-        profileMenu.append(`<a id="${profileName}" class="dropdown-item profile-menu-item cursor-pointer">${profileName}</a>`);
-    });
-    
-    $('#profileDropdown').text(`Select Profile (${profileNames.length})`);
-    
-    notificationManager.info(`Profile menu loaded with ${profileNames.length} profiles`);
-
-}
 
 async function loadActionbars() {
 
