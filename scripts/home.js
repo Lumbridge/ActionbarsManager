@@ -250,7 +250,9 @@ $(async function () {
     $(document).on("click", "#export-button", function () {
         const profileName = $('#profileDropdown').text();
         let json = profileManager.exportProfile(profileName);
-        bootbox.alert(`<textarea class="form-control" rows="20">${json}</textarea>`);
+        bootbox.alert(`
+            <h5 class="mb-4">To import this into the Actionbars plugin you can either shift & right click an existing actionbar slot or go got the Actionbar plugin settings > infoboxes section > import setup.</h5>
+            <textarea class="form-control" rows="20">${json}</textarea>`);
     });
 
     $(document).on("click", ".search-result-item", function () {
@@ -286,6 +288,19 @@ $(async function () {
         modalProvider.showAddNewSlotModal(actionbarIndex, slotIndex);
     });
 
+    $(document).on("click", "#add-actionbar-button", function () {   
+        var profileName = $('#profileDropdown').text();
+        profileManager.addEmptyActionbar(profileName);
+        loadActionbars();
+    });
+
+    $(document).on("click", ".delete-actionbar", function () {
+        var actionbarIndex = $(this).attr('data-actionbar-index');
+        var profileName = $('#profileDropdown').text();
+        profileManager.deleteActionbar(profileName, actionbarIndex);
+        loadActionbars();
+    });
+
 });
 
 async function loadActionbars() {
@@ -300,7 +315,10 @@ async function loadActionbars() {
 
         var titleNumber = parseInt(actionbarIndex) + 1;
 
-        $('#actionbars-container').append(`<h5>Actionbar ${titleNumber} <button class="btn btn-sm btn-primary add-new-slot" data-actionbar-index="${actionbarIndex}"><i class="fa fa-plus"></i> Add new slot</button> </h5>`);
+        $('#actionbars-container').append(`<h5>Actionbar ${titleNumber} 
+            <button class="btn btn-sm btn-primary add-new-slot" data-actionbar-index="${actionbarIndex}"><i class="fa fa-plus"></i> Add new slot</button> 
+            <button class="btn btn-sm btn-danger delete-actionbar" data-actionbar-index="${actionbarIndex}"><i class="fa fa-trash-can"></i></button> 
+            </h5>`);
 
         var actionbarRow = `<div class="row rounded border border-3 p-2 m-1 mb-3 bg-light-subtle actionbar-sortable" id="actionbar-${actionbarIndex}">`;
 

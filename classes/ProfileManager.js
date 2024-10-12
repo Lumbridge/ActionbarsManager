@@ -13,6 +13,18 @@ class ProfileManager {
         }
     }
 
+    addEmptyActionbar(profileName){
+        let profileData = this.getProfile(profileName);
+        profileData[1][0].push([]);
+        this.saveProfile(profileName, profileData);
+    }
+
+    deleteActionbar(profileName, actionbarIndex){
+        let profileData = this.getProfile(profileName);
+        profileData[1][0].splice(actionbarIndex, 1);
+        this.saveProfile(profileName, profileData);
+    }
+
     getCurrentProfileName() {
         return $('#profileDropdown').text();
     }
