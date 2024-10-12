@@ -227,7 +227,7 @@ class ModalProvider {
                                 bootbox.hideAll();
                             } else {
                                 profileManager.updateItemAction(actionbarIndex, slotIndex, selectedPrayer, actionIndex, selectedPrayerId).then(() => {
-                                    uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedPrayer.name);
+                                    uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, `Toggle ${selectedPrayer.name}`);
                                     uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
                                     bootbox.hideAll();
                                 });
