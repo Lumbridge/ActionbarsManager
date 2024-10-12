@@ -20,7 +20,7 @@ class EndpointManager {
     getCurrentEndpoint(stripProxy = false) {
         var apiBaseUrl = storage.load('apiBaseUrl');
         var useProxy = storage.load('useProxy');
-        var endpoint = useProxy === true ? proxyUrl + apiBaseUrl : apiBaseUrl;
+        var endpoint = useProxy == true ? proxyUrl + apiBaseUrl : apiBaseUrl;
         return stripProxy ? endpoint.replace(proxyUrl, '') : endpoint;
     }
 }

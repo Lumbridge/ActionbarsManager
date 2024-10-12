@@ -4,7 +4,7 @@ class ModalProvider {
         bootbox.prompt({
             title: promptMessage,
             callback: function (result) {
-                if (result !== null) {
+                if (result) {
                     callback(result);
                 }
             }
@@ -37,13 +37,11 @@ class ModalProvider {
 
                         var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
 
-                        if (!slotIndex || slotIndex === "undefined") {
+                        if (!slotIndex || slotIndex == "undefined") {
                             slotIndex = actionbar.length;
                         }
 
-                        slotIndex = parseInt(slotIndex);
-
-                        if (slotIndex === actionbar.length) {
+                        if (slotIndex == actionbar.length) {
 
                             profileManager.addItemToActionbar(profileName, "ItemItem", actionbarIndex, slotIndex, -1, itemId, selectedAction);
                             var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex);
@@ -55,12 +53,13 @@ class ModalProvider {
 
                             var slot = actionbar[slotIndex];
 
-                            if (slot.type === "CompoundItem") {
+                            if (slot.type == "CompoundItem") {
                                 slot.actions.push({ action: selectedAction, itemId: itemId, modifier: true, type: "ItemItem" });
                                 actionbar[slotIndex] = slot;
                                 profileManager.saveActionbar(profileName, actionbarIndex, actionbar);
-                                var actionSlot = actionbar[slotIndex].actions[actionbar[slotIndex].actions.length - 1];
-                                var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, actionSlot);
+                                var actionIndex = actionbar[slotIndex].actions.length - 1;
+                                var actionSlot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex);
+                                var slotHtml = htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, actionSlot);
                                 uiManager.addNewSlot(actionbarIndex, slotHtml, slotIndex);
                                 bootbox.hideAll();
                             } else {
@@ -103,10 +102,10 @@ class ModalProvider {
 
                         const selectedType = $('#slot-type-select').val();
 
-                        if (selectedType === "ItemItem") {
+                        if (selectedType == "ItemItem") {
                             modalProvider.showItemSearchModal(actionbarIndex, slotIndex);
-                        } else {
-
+                        } else if (selectedType == "PrayerItem") {
+                            modalProvider.showPrayerSelectionModal(actionbarIndex, slotIndex);
                         }
                     }
                 }
@@ -174,6 +173,73 @@ class ModalProvider {
 
     }
 
+    showPrayerSelectionModal(actionbarIndex, slotIndex, actionIndex = -1) {
+        const normalPrayers = widgetLookup.normalPrayers;
+
+        bootbox.dialog({
+            title: 'Select Prayer',
+            message: `
+                <div class="form-group">
+                    <label for="prayer-select">Select a prayer</label>
+                    <select id="prayer-select" class="form-control">
+                        ${normalPrayers.map(prayer => `<option value="${prayer.widgetId}">${prayer.name}</option>`).join('')}
+                    </select>
+                </div>
+            `,
+            buttons: {
+                cancel: { label: "Cancel", className: 'btn-secondary' },
+                save: {
+                    label: "Save",
+                    className: 'btn-primary',
+                    callback: async function () {
+
+                        const selectedPrayerId = $('#prayer-select').val();
+                        const selectedPrayer = normalPrayers.find(prayer => prayer.widgetId == selectedPrayerId);
+                        const profileName = profileManager.getCurrentProfileName();
+                        const imageLink = await profileManager.getImageLink("PrayerItem", {widgetId: selectedPrayerId});
+
+                        var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
+
+                        if (!slotIndex) {
+                            slotIndex = actionbar.length;
+                        }
+
+                        if (slotIndex == actionbar.length) {
+
+                            profileManager.addItemToActionbar(profileName, "PrayerItem", actionbarIndex, slotIndex, -1, selectedPrayerId, selectedPrayer);
+                            var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex);
+                            var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
+                            uiManager.addNewSlot(actionbarIndex, slotHtml);
+                            bootbox.hideAll();
+
+                        } else {
+
+                            var slot = actionbar[slotIndex];
+
+                            if (slot.type == "CompoundItem") {
+                                slot.actions.push({ widgetId: selectedPrayerId, modifier: true, type: "PrayerItem" });
+                                actionbar[slotIndex] = slot;
+                                profileManager.saveActionbar(profileName, actionbarIndex, actionbar);
+                                var actionIndex = actionbar[slotIndex].actions.length - 1;
+                                var actionSlot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex);
+                                var slotHtml = htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, actionSlot);
+                                uiManager.addNewSlot(actionbarIndex, slotHtml, slotIndex);
+                                bootbox.hideAll();
+                            } else {
+                                profileManager.updateItemAction(actionbarIndex, slotIndex, selectedPrayer, actionIndex, selectedPrayerId).then(() => {
+                                    uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedPrayer.name);
+                                    uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
+                                    bootbox.hideAll();
+                                });
+                            }
+
+                        }
+
+                    }
+                }
+            }
+        });
+    }
 
     showImportProfileModal() {
         bootbox.dialog({
@@ -235,8 +301,8 @@ class ModalProvider {
 
         $('#paginationButtons').empty();
 
-        const prevDisabled = currentPage === 1 ? 'disabled' : '';
-        const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+        const prevDisabled = currentPage == 1 ? 'disabled' : '';
+        const nextDisabled = currentPage == totalPages ? 'disabled' : '';
 
         $('#paginationButtons').append(`
             <button class="btn btn-secondary me-2" id="prevPage" ${prevDisabled}>Previous</button>

@@ -1,7 +1,7 @@
 class UIManager {
 
     setSlotAction(actionbarIndex, slotIndex, actionIndex, newAction) {
-        if (actionIndex && actionIndex !== undefined && actionIndex !== -1 && actionIndex !== "-1") {
+        if (actionIndex && actionIndex != -1) {
             $(`.sub-slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"][data-action-index="${actionIndex}"]`).find('.flavour-text').text(newAction);
         } else {
             $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).find('.flavour-text').text(newAction);
@@ -9,26 +9,25 @@ class UIManager {
     }
 
     setSlotImage(actionbarIndex, slotIndex, actionIndex, newImageLink) {
-        if (actionIndex && actionIndex !== undefined && actionIndex !== -1 && actionIndex !== "-1") {
-
-            // parse action index to a number
-            actionIndex = parseInt(actionIndex);
+        if (actionIndex && actionIndex != -1) {
 
             // if aciton index is 0 then set the parent slot image as well
-            if (actionIndex === 0) {
+            if (actionIndex == 0) {
                 $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).find('.slot-image').attr('src', newImageLink);
             }
                 
             $(`.sub-slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"][data-action-index="${actionIndex}"]`).find('.slot-image').attr('src', newImageLink);
             
         } else {
+
             $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).find('.slot-image').attr('src', newImageLink);
+        
         }
     }
 
     addNewSlot(actionbarIndex, slotHtml, slotIndex) {
         if (slotIndex) {
-            $(`.slot-container[data-actionbar-index=${actionbarIndex}][data-slot-index="${slotIndex} ~ .actionbar-slot.details"]`).append(slotHtml);
+            $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"] ~ .actionbar-slot-details`).append(slotHtml);
         }else{
             $(`#actionbar-${actionbarIndex}`).append(slotHtml);
         }
@@ -72,15 +71,16 @@ class UIManager {
         let promises = [];
 
         var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
-        var keyBinds = keybindManager.getKeybinds(profileName).map(keyCode => keybindManager.convertKeyCode(keyCode));    
+        var keyBinds = keybindManager.getKeybinds(profileName); 
+        var convertedKeyBinds = keyBinds.map(keyCode => keybindManager.convertKeyCode(keyCode));
 
         for (let slotIndex in actionbar) {
             promises.push(
                 profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex).then((actionbarSlot) => {
                     
-                    let keybind = keyBinds[slotIndex];
+                    let keybind = convertedKeyBinds[slotIndex];
 
-                    if(keybind === undefined){
+                    if(!keybind){
                         keybind = "no keybind";
                     }
 

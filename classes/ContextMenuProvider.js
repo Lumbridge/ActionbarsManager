@@ -36,7 +36,7 @@ class ContextMenuProvider {
             const action = $(this).text();
 
             // get menuoption where name matches action
-            const actionIndex = menuOptions.findIndex(option => option.text === action);
+            const actionIndex = menuOptions.findIndex(option => option.text == action);
 
             // call the callback function
             menuOptions[actionIndex].callback();

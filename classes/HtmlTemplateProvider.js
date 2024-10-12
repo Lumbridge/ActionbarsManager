@@ -1,34 +1,34 @@
 class HtmlTemplateProvider {
 
-    getSlotTemplate(actionbarIndex, slotIndex, actionbarSlot) {
+    getSlotTemplate(actionbarIndex, slotIndex, slot) {
 
-        if(!actionbarSlot){
-            actionbarSlot = profileManager.getActionbarSlot(profileManager.getCurrentProfileName(), actionbarIndex, slotIndex);
+        if(!slot) {
+            slot = profileManager.getActionbarSlot(profileManager.getCurrentProfileName(), actionbarIndex, slotIndex);
         }
 
         let keybind = keybindManager.getSlotKeybind(profileManager.getCurrentProfileName(), slotIndex);
 
         return `
             <div class="col-auto my-2 my-xxl-0">
-                <div class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 my-1 cursor-pointer ${actionbarSlot.type}"
+                <div class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-1 my-1 cursor-pointer ${slot.type}"
                 data-actionbar-index="${actionbarIndex}" 
                 data-slot-index="${slotIndex}">
-                    <img class="slot-image" src="${actionbarSlot.imageLink}" alt="Item #${actionbarSlot.itemId}">
-                    <div class="flavour-text text-center">${actionbarSlot.flavourText}</div>
+                    <img class="slot-image" src="${slot.imageLink}" alt="Item #${slot.itemId}">
+                    <div class="flavour-text text-center">${slot.flavourText}</div>
                     <div class="keybind text-center">${keybind}</div>
                 </div>
             </div>
         `;
     }
 
-    getChildSlotTemplate(actionbarIndex, slotIndex, action) {
+    getChildSlotTemplate(actionbarIndex, slotIndex, slot) {
         return `
-            <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle ${action.type} sub-slot-container border border-2 rounded py-2 cursor-pointer"
+            <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle ${slot.type} sub-slot-container border border-2 rounded py-2 cursor-pointer"
                 data-actionbar-index="${actionbarIndex}" 
                 data-slot-index="${slotIndex}"
-                data-action-index="${action.actionIndex}">
-                    <img class="sub-slot-image" src="${action.imageLink}" alt="Item #${action.itemId}">
-                    <div class="flavour-text">${action.flavourText}</div>
+                data-action-index="${slot.actionIndex}">
+                    <img class="sub-slot-image" src="${slot.imageLink}" alt="Item #${slot.itemId}">
+                    <div class="flavour-text text-center">${slot.flavourText}</div>
             </div>
         `;
     }

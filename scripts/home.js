@@ -25,6 +25,76 @@ $(async function () {
         await loadActionbars();
     });
 
+    $(document).on("contextmenu", ".PrayerItem", function (e) {
+        
+        e.preventDefault();
+
+        const slotIndex = $(this).attr('data-slot-index');
+        const actionbarIndex = $(this).attr('data-actionbar-index');
+        const actionIndex = $(this).attr('data-action-index');
+
+        let menuOptions = [{
+                text: 'Edit',
+                callback: function(){ 
+                    modalProvider.showPrayerSelectionModal(actionbarIndex, slotIndex, actionIndex);
+                }
+            }, {
+                text: 'Delete',
+                callback: function(){ 
+                    profileManager.deleteActionbarSlot($('#profileDropdown').text(), actionbarIndex, slotIndex, actionIndex);
+                    uiManager.removeSlot(actionbarIndex, slotIndex, actionIndex);
+                },
+                css: 'color:red;'
+            }
+        ]
+
+        if(!actionIndex) {
+            menuOptions.splice(1, 0, {
+                text: 'Convert to compound',
+                callback: function(){ 
+
+                }
+            });
+        }
+
+        contextMenuProvider.showContextMenu(e, menuOptions);
+    });
+
+    $(document).on("contextmenu", ".OrbItem", function (e) {
+        
+        e.preventDefault();
+
+        const slotIndex = $(this).attr('data-slot-index');
+        const actionbarIndex = $(this).attr('data-actionbar-index');
+        const actionIndex = $(this).attr('data-action-index');
+
+        let menuOptions = [{
+                text: 'Edit',
+                callback: function(){ 
+
+                }
+            }, {
+                text: 'Delete',
+                callback: function(){ 
+                    profileManager.deleteActionbarSlot($('#profileDropdown').text(), actionbarIndex, slotIndex);
+                    uiManager.removeSlot(actionbarIndex, slotIndex);
+                },
+                css: 'color:red;'
+            }
+        ]
+
+        if(!actionIndex) {
+            menuOptions.splice(1, 0, {
+                text: 'Convert to compound',
+                callback: function(){ 
+
+                }
+            });
+        }
+
+        contextMenuProvider.showContextMenu(e, menuOptions);
+    });
+
     $(document).on("contextmenu", ".CompoundItem", function (e) {
         
         e.preventDefault();
@@ -39,8 +109,7 @@ $(async function () {
                 uiManager.removeSlot(actionbarIndex, slotIndex);
              },
             css: 'color:red;'
-        },
-        {
+        }, {
             text: 'Add slot',
             callback: function(){ 
                 modalProvider.showAddNewSlotModal(actionbarIndex, slotIndex);
@@ -62,8 +131,7 @@ $(async function () {
         let menuOptions = [{
             text: 'Edit',
             callback: function(){ modalProvider.showItemSearchModal(actionbarIndex, slotIndex, actionIndex); }
-        },
-        {
+        }, {
             text: 'Delete',
             callback: function(){ 
                 profileManager.deleteActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
@@ -71,6 +139,15 @@ $(async function () {
              },
             css: 'color:red;border-bottom-width:5px;'
         }];
+
+        if(!actionIndex) {
+            menuOptions.splice(1, 0, {
+                text: 'Convert to compound',
+                callback: function(){ 
+
+                }
+            });
+        }
 
         itemFetcher.fetchItemActions(actionbarIndex, slotIndex, actionIndex).then((actions) => {
 
@@ -157,8 +234,6 @@ $(async function () {
             promises.push(
                 profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex).then((actionWithImage) => {
                     let actionHtml = htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, actionWithImage);
-                    
-                    // Replace placeholder with actual slot data
                     $(`.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${actionIndex}"]`).replaceWith(actionHtml);
                 })
             );
@@ -188,7 +263,7 @@ $(async function () {
 
         itemFetcher.fetchItemActionsById(itemId).then((actions) => {
 
-            if (actions.length === 1) {
+            if (actions.length == 1) {
 
                 profileManager.updateItemAction(actionbarIndex, slotIndex, actions[0], actionIndex).then(() => {
                     uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, actions[0]);

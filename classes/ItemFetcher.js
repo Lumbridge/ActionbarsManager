@@ -62,7 +62,7 @@ class ItemFetcher {
     async fetchItem(itemId) {
         try {
 
-            if (itemId === undefined) {
+            if (!itemId) {
                 return;
             }
 
@@ -104,7 +104,7 @@ class ItemFetcher {
     async fetchItemImage(itemId) {
         try {
 
-            if (itemId === undefined) {
+            if (!itemId) {
                 return "";
             }
 
@@ -142,7 +142,7 @@ class ItemFetcher {
 
             let profileName = profileManager.getCurrentProfileName();
 
-            if (actionbarId === undefined || slotIndex === undefined) {
+            if (!actionbarId || !slotIndex) {
                 return "";
             }
 
@@ -153,7 +153,7 @@ class ItemFetcher {
             }
 
             let itemId = -1;
-            if(actionIndex !== -1){
+            if(actionIndex != -1){
                 itemId = actionbar[slotIndex].actions[actionIndex].itemId;
             }else{
                 itemId = actionbar[slotIndex].itemId;
@@ -181,7 +181,7 @@ class ItemFetcher {
     async fetchItemActionsById(itemId){
         try {
 
-            if (itemId === undefined) {
+            if (!itemId) {
                 return "";
             }
 

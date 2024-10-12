@@ -112,7 +112,7 @@ class IndexedDBHelper {
                         let score = 0;
     
                         // Exact match gets the highest score
-                        if (itemNameLower === searchTermLower) {
+                        if (itemNameLower == searchTermLower) {
                             score = 100;
                         } 
                         // Prefix match gets a high score

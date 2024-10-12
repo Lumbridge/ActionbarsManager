@@ -14,7 +14,7 @@ class KeybindManager {
 
     // convert keycode to corresponding key
     convertKeyCode(keyCode) {
-        if(keyCode === undefined || keyCode.keybind.length !== 4){
+        if(!keyCode || keyCode.keybind.length != 4){
             return "";
         }
         keyCode = keyCode.keybind.slice(0, -2);
