@@ -40,10 +40,7 @@ $(async function () {
                 }
             }, {
                 text: 'Delete',
-                callback: function(){ 
-                    profileManager.deleteActionbarSlot($('#profileDropdown').text(), actionbarIndex, slotIndex, actionIndex);
-                    uiManager.removeSlot(actionbarIndex, slotIndex, actionIndex);
-                },
+                callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
                 css: 'color:red;'
             }
         ]
@@ -104,10 +101,7 @@ $(async function () {
 
         let menuOptions = [{
             text: 'Delete',
-            callback: function(){ 
-                profileManager.deleteActionbarSlot($('#profileDropdown').text(), actionbarIndex, slotIndex);
-                uiManager.removeSlot(actionbarIndex, slotIndex);
-             },
+            callback: confirmDeleteSlot(actionbarIndex, slotIndex),
             css: 'color:red;'
         }, {
             text: 'Add slot',
@@ -125,7 +119,6 @@ $(async function () {
 
         const slotIndex = $(this).attr('data-slot-index');
         const actionbarIndex = $(this).attr('data-actionbar-index');
-        const profileName = $('#profileDropdown').text();
         const actionIndex = $(this).attr('data-action-index');
 
         let menuOptions = [{
@@ -133,10 +126,7 @@ $(async function () {
             callback: function(){ modalProvider.showItemSearchModal(actionbarIndex, slotIndex, actionIndex); }
         }, {
             text: 'Delete',
-            callback: function(){ 
-                profileManager.deleteActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
-                uiManager.removeSlot(actionbarIndex, slotIndex, actionIndex);
-             },
+            callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
             css: 'color:red;border-bottom-width:5px;'
         }];
 
@@ -297,11 +287,55 @@ $(async function () {
     $(document).on("click", ".delete-actionbar", function () {
         var actionbarIndex = $(this).attr('data-actionbar-index');
         var profileName = $('#profileDropdown').text();
-        profileManager.deleteActionbar(profileName, actionbarIndex);
-        loadActionbars();
+        
+        bootbox.confirm({
+            title: `Delete actionbar ${parseInt(actionbarIndex) + 1}`,
+            message: "Are you sure you want to delete this actionbar?",
+            buttons: {
+                confirm: {
+                    label: 'Yes',
+                    className: 'btn-danger'
+                },
+                cancel: {
+                    label: 'No',
+                    className: 'btn-secondary'
+                }
+            },
+            callback: function (result) {
+                if (result) {
+                    profileManager.deleteActionbar(profileName, actionbarIndex);
+                    loadActionbars();
+                }
+            }
+        });
     });
 
 });
+
+function confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex = -1) {
+    return function () {
+        bootbox.confirm({
+            title: "Delete Slot",
+            message: "Are you sure you want to delete this slot?",
+            buttons: {
+                confirm: {
+                    label: 'Yes',
+                    className: 'btn-danger'
+                },
+                cancel: {
+                    label: 'No',
+                    className: 'btn-secondary'
+                }
+            },
+            callback: function (result) {
+                if (result) {
+                    profileManager.deleteActionbarSlot($('#profileDropdown').text(), actionbarIndex, slotIndex, actionIndex);
+                    uiManager.removeSlot(actionbarIndex, slotIndex, actionIndex);
+                }
+            }
+        });
+    };
+}
 
 async function loadActionbars() {
 

@@ -33,8 +33,8 @@ class UIManager {
         }
     }
 
-    removeSlot(actionbarIndex, slotIndex, actionIndex) {
-        if(actionIndex){
+    removeSlot(actionbarIndex, slotIndex, actionIndex = -1) {
+        if(actionIndex != -1){
             $(`.sub-slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"][data-action-index="${actionIndex}"]`).remove();
         }else{
             $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).parent().remove();
