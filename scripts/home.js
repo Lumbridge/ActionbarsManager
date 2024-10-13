@@ -35,7 +35,7 @@ $(async function () {
 
         let menuOptions = [{
                 text: 'Edit',
-                callback: function(){ 
+                callback: function() { 
                     modalProvider.showPrayerSelectionModal(actionbarIndex, slotIndex, actionIndex);
                 }
             }, {
@@ -49,7 +49,7 @@ $(async function () {
             menuOptions.splice(1, 0, {
                 text: 'Convert to compound',
                 callback: function(){ 
-
+                    convertToCompound(actionbarIndex, slotIndex);
                 }
             });
         }
@@ -84,7 +84,7 @@ $(async function () {
             menuOptions.splice(1, 0, {
                 text: 'Convert to compound',
                 callback: function(){ 
-
+                    convertToCompound(actionbarIndex, slotIndex);
                 }
             });
         }
@@ -123,8 +123,9 @@ $(async function () {
 
         let menuOptions = [{
             text: 'Edit',
-            callback: function(){ modalProvider.showItemSearchModal(actionbarIndex, slotIndex, actionIndex); }
-        }, {
+            callback: function(){modalProvider.showItemSearchModal(actionbarIndex, slotIndex, actionIndex) }
+        }, 
+        {
             text: 'Delete',
             callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
             css: 'color:red;border-bottom-width:5px;'
@@ -134,7 +135,7 @@ $(async function () {
             menuOptions.splice(1, 0, {
                 text: 'Convert to compound',
                 callback: function(){ 
-
+                    convertToCompound(actionbarIndex, slotIndex);
                 }
             });
         }
@@ -145,31 +146,29 @@ $(async function () {
                 text: 'Use',
                 callback: function() { 
                     const action = 'Use';
-                    profileManager.updateItemAction(actionbarIndex, slotIndex, action, actionIndex).then(() => {
-                        uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
-                    });
+                    profileManager.updateSlotAction(actionbarIndex, slotIndex, action, actionIndex);
+                    uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
                 }
             });
 
             actions.forEach(action => {
                 menuOptions.push({
                     text: action,
-                    callback: function(){ 
-                        profileManager.updateItemAction(actionbarIndex, slotIndex, action, actionIndex).then(() => {
-                            uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
-                        });
+                    callback: function() { 
+                        profileManager.updateSlotAction(actionbarIndex, slotIndex, action, actionIndex);
+                        uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
                     }
                 });
             });
 
             menuOptions.push({
                 text: 'Custom Action',
-                callback: function(){ 
-                    modalProvider.showPromptModal("Enter custom action (action must exist in the right click menu for the item when in inventory or equipped)", function(result){
+                callback: function() { 
+                    modalProvider.showPromptModal("Enter custom action (action must exist in the right click menu for the item when in inventory or equipped)", 
+                    function(result) {
                         const action = result;
-                        profileManager.updateItemAction(actionbarIndex, slotIndex, action, actionIndex).then(() => {
-                            uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
-                        });
+                        profileManager.updateSlotAction(actionbarIndex, slotIndex, action, actionIndex);
+                        uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
                     });
                 },
                 css: 'border-top-width:5px;'
@@ -257,10 +256,9 @@ $(async function () {
 
             if (actions.length == 1) {
 
-                profileManager.updateItemAction(actionbarIndex, slotIndex, actions[0], actionIndex).then(() => {
-                    uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, actions[0]);
-                    uiManager.setSlotImage(actionbarIndex, slotIndex, imageLink);
-                });
+                profileManager.updateSlotAction(actionbarIndex, slotIndex, actions[0], actionIndex)
+                uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, actions[0]);
+                uiManager.setSlotImage(actionbarIndex, slotIndex, imageLink);
 
             } else {
 
@@ -311,6 +309,17 @@ $(async function () {
     });
 
 });
+
+function convertToCompound(actionbarIndex, slotIndex) {
+    var profileName = $('#profileDropdown').text();
+    var actionbarSlot = profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex);
+    var actions = [actionbarSlot];
+    var compoundTemplate = jsonTemplateProvider.getCompoundTemplate();
+    var newSlot = JSON.parse(compoundTemplate);
+    newSlot.actions = actions;
+    profileManager.saveActionbarSlot(profileName, actionbarIndex, slotIndex, newSlot);
+    uiManager.updateActionbarSlots(actionbarIndex, profileName);
+}
 
 function confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex = -1) {
     return function () {

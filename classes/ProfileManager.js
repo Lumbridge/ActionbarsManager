@@ -13,6 +13,10 @@ class ProfileManager {
         }
     }
 
+    // ====================
+    // Actionbar operations
+    // ====================
+    
     addEmptyActionbar(profileName){
         let profileData = this.getProfile(profileName);
         profileData[1][0].push([]);
@@ -25,16 +29,37 @@ class ProfileManager {
         this.saveProfile(profileName, profileData);
     }
 
+    getActionbar(profileName, actionbarIndex) {
+        return this.getActionbars(profileName)[actionbarIndex];
+    }
+
+    saveActionbar(profileName, actionbarIndex, actionbarData) {
+        let actionbars = this.getActionbars(profileName);
+        actionbars[actionbarIndex] = actionbarData;
+        this.saveActionbars(profileName, actionbars);
+    }
+
+    addItemToActionbar(profileName, type, actionbarIndex, slotIndex, actionIndex = -1, id = -1, action = "") {
+        let template = jsonTemplateProvider.getTemplate(type, id, action);
+
+        let slot = JSON.parse(template);
+        if (actionIndex != -1) slot.actionIndex = actionIndex;
+
+        this.saveActionbarSlot(profileName, actionbarIndex, slotIndex, slot, actionIndex);
+    }
+
+    // ==================
+    // Profile operations
+    // ==================
+
     getCurrentProfileName() {
         return $('#profileDropdown').text();
     }
 
-    // Export profile as JSON
     exportProfile(profileName) {
         return JSON.stringify(this.getProfile(profileName)[1]);
     }
 
-    // Import a profile from JSON
     importProfile(profileName, jsonData) {
         if (!this.validateImportData(profileName, jsonData)) return;
 
@@ -50,36 +75,14 @@ class ProfileManager {
         }
     }
 
-    validateImportData(profileName, jsonData) {
-        if (!profileName) {
-            notificationManager.error('Profile name is required');
-            return false;
-        }
-
-        if (this.getProfileNames().includes(profileName)) {
-            notificationManager.error('Profile name already exists');
-            return false;
-        }
-
-        if (!jsonData) {
-            notificationManager.error('JSON data is required');
-            return false;
-        }
-
-        return true;
-    }
-
-    // Get a list of profile names
     getProfileNames() {
         return storage.load(profileKey).map(profile => profile[0]);
     }
 
-    // Get profile by name
     getProfile(profileName) {
         return storage.load(profileKey).find(profile => profile[0] === profileName);
     }
 
-    // Save profile data
     saveProfile(profileName, profileData) {
         let profiles = storage.load(profileKey);
         const profileIndex = profiles.findIndex(profile => profile[0] === profileName);
@@ -93,28 +96,10 @@ class ProfileManager {
         storage.save(profileKey, profiles);
     }
 
-    // Actionbar operations
-    getActionbars(profileName) {
-        return this.getProfile(profileName)[1][0];
-    }
-
-    getActionbar(profileName, actionbarIndex) {
-        return this.getActionbars(profileName)[actionbarIndex];
-    }
-
-    saveActionbar(profileName, actionbarIndex, actionbarData) {
-        let actionbars = this.getActionbars(profileName);
-        actionbars[actionbarIndex] = actionbarData;
-        this.saveActionbars(profileName, actionbars);
-    }
-
-    saveActionbars(profileName, actionbars) {
-        let profileData = this.getProfile(profileName);
-        profileData[1][0] = actionbars;
-        this.saveProfile(profileName, profileData);
-    }
-
+    // ===============
     // Slot operations
+    // ===============
+
     saveActionbarSlot(profileName, actionbarIndex, slotIndex, slotData, actionIndex = -1) {
         let actionbar = this.getActionbar(profileName, actionbarIndex);
 
@@ -136,12 +121,26 @@ class ProfileManager {
         }
 
         slot.flavourText = slot.name || slot.action || '';
-        this.setWidgetFlavourText(slot);
+        this.setSlotFlavourText(slot);
 
         return slot;
     }
 
-    setWidgetFlavourText(slot) {
+    updateSlotId(slot, id) {
+        switch (slot.type) {
+            case "ItemItem":
+                slot.itemId = id;
+                break;
+            case "PrayerItem":
+            case "OrbItem":
+            case "SpellbookItem":
+                slot.widgetId = id;
+                break;
+        }
+        return slot;
+    }
+
+    setSlotFlavourText(slot) {
         let widgetName = slot.widgetId ? widgetLookup.fetchWidgetName(slot.widgetId) : '';
 
         if (slot.type === 'LastActorItem') {
@@ -151,6 +150,36 @@ class ProfileManager {
         } else if (slot.type == 'OrbItem') {
             slot.flavourText = slot.widgetType;
         }
+    }
+
+    getActionbars(profileName) {
+        return this.getProfile(profileName)[1][0];
+    }
+
+    saveActionbars(profileName, actionbars) {
+        let profileData = this.getProfile(profileName);
+        profileData[1][0] = actionbars;
+        this.saveProfile(profileName, profileData);
+    }
+
+    updateSlotAction(actionbarIndex, slotIndex, action, actionIndex = -1, id = -1) {
+        let profileName = this.getCurrentProfileName();
+        let slot = this.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
+
+        if (slot.type == "ItemItem") slot.action = action;
+        if (id != -1) slot = this.updateSlotId(slot, id);
+
+        this.saveActionbarSlot(profileName, actionbarIndex, slotIndex, slot, actionIndex);
+    }
+
+    deleteActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex = -1) {
+        let actionbar = this.getActionbar(profileName, actionbarIndex);
+        if (actionIndex != -1) {
+            actionbar[slotIndex].actions.splice(actionIndex, 1);
+        } else {
+            actionbar.splice(slotIndex, 1);
+        }
+        this.saveActionbar(profileName, actionbarIndex, actionbar);
     }
 
     // API and image data enrichment
@@ -181,67 +210,25 @@ class ProfileManager {
         return widgetLookup.fetchItemImage(actionbarSlot.widgetType || actionbarSlot.widgetId);
     }
 
-    async updateItemAction(actionbarIndex, slotIndex, action, actionIndex = -1, id = -1) {
-        let profileName = this.getCurrentProfileName();
-        let slot = this.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
-
-        if (slot.type == "ItemItem") slot.action = action;
-        if (id != -1) slot = this.updateSlotId(slot, id);
-
-        this.saveActionbarSlot(profileName, actionbarIndex, slotIndex, slot, actionIndex);
-    }
-
-    updateSlotId(slot, id) {
-        switch (slot.type) {
-            case "ItemItem":
-                slot.itemId = id;
-                break;
-            case "PrayerItem":
-            case "OrbItem":
-            case "SpellbookItem":
-                slot.widgetId = id;
-                break;
+    validateImportData(profileName, jsonData) {
+        if (!profileName) {
+            notificationManager.error('Profile name is required');
+            return false;
         }
-        return slot;
-    }
 
-    // Add item to actionbar
-    addItemToActionbar(profileName, type, actionbarIndex, slotIndex, actionIndex = -1, id = -1, action = "") {
-        let template = this.getTemplate(type, id, action);
-
-        let slot = JSON.parse(template);
-        if (actionIndex != -1) slot.actionIndex = actionIndex;
-
-        this.saveActionbarSlot(profileName, actionbarIndex, slotIndex, slot, actionIndex);
-    }
-
-    getTemplate(type, id, action) {
-        switch (type) {
-            case "ItemItem":
-                return jsonTemplateProvider.getItemTemplate(false, id, action);
-            case "PrayerItem":
-                return jsonTemplateProvider.getPrayerTemplate(false, id, action);
-            case "OrbItem":
-                return jsonTemplateProvider.getOrbTemplate(false, id);
-            case "SpellbookItem":
-                return jsonTemplateProvider.getSpellbookItemTemplate(id);
-            case "CompoundItem":
-                return jsonTemplateProvider.getCompoundTemplate();
-            default:
-                return '';
+        if (this.getProfileNames().includes(profileName)) {
+            notificationManager.error('Profile name already exists');
+            return false;
         }
+
+        if (!jsonData) {
+            notificationManager.error('JSON data is required');
+            return false;
+        }
+
+        return true;
     }
 
-    // Delete slot from actionbar
-    deleteActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex = -1) {
-        let actionbar = this.getActionbar(profileName, actionbarIndex);
-        if (actionIndex != -1) {
-            actionbar[slotIndex].actions.splice(actionIndex, 1);
-        } else {
-            actionbar.splice(slotIndex, 1);
-        }
-        this.saveActionbar(profileName, actionbarIndex, actionbar);
-    }
 }
 
 var profileManager = new ProfileManager();

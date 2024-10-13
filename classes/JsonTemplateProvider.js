@@ -56,6 +56,23 @@ class JsonTemplateProvider {
         `;
     }
 
+    getTemplate(type, id, action) {
+        switch (type) {
+            case "ItemItem":
+                return jsonTemplateProvider.getItemTemplate(false, id, action);
+            case "PrayerItem":
+                return jsonTemplateProvider.getPrayerTemplate(false, id, action);
+            case "OrbItem":
+                return jsonTemplateProvider.getOrbTemplate(false, id);
+            case "SpellbookItem":
+                return jsonTemplateProvider.getSpellbookItemTemplate(id);
+            case "CompoundItem":
+                return jsonTemplateProvider.getCompoundTemplate();
+            default:
+                return '';
+        }
+    }
+
 }
 
 var jsonTemplateProvider = new JsonTemplateProvider();

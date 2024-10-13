@@ -25,7 +25,7 @@ class HtmlTemplateProvider {
         return `
             <div class="action-slot d-flex flex-column align-items-center justify-content-center mt-2 bg-dark-subtle ${slot.type} sub-slot-container border border-2 rounded py-2 cursor-pointer"
                 data-actionbar-index="${actionbarIndex}" 
-                data-slot-index="${slotIndex}"
+                data-slot-index="${slotIndex}" 
                 data-action-index="${slot.actionIndex}">
                     <img class="sub-slot-image" src="${slot.imageLink}" alt="Item #${slot.itemId}">
                     <div class="flavour-text text-center">${slot.flavourText}</div>

@@ -57,17 +57,16 @@ class ModalProvider {
                                 slot.actions.push({ action: selectedAction, itemId: itemId, modifier: true, type: "ItemItem" });
                                 actionbar[slotIndex] = slot;
                                 profileManager.saveActionbar(profileName, actionbarIndex, actionbar);
-                                var actionIndex = actionbar[slotIndex].actions.length - 1;
-                                var actionSlot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex);
+                                var totalActions = actionbar[slotIndex].actions.length - 1;
+                                var actionSlot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, totalActions);
                                 var slotHtml = htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, actionSlot);
                                 uiManager.addNewSlot(actionbarIndex, slotHtml, slotIndex);
                                 bootbox.hideAll();
                             } else {
-                                profileManager.updateItemAction(actionbarIndex, slotIndex, selectedAction, actionIndex, itemId).then(() => {
-                                    uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
-                                    uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
-                                    bootbox.hideAll();
-                                });
+                                profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedAction, actionIndex, itemId);
+                                uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
+                                uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
+                                bootbox.hideAll();
                             }
 
                         }
@@ -207,30 +206,29 @@ class ModalProvider {
                         if (slotIndex == actionbar.length) {
 
                             profileManager.addItemToActionbar(profileName, "PrayerItem", actionbarIndex, slotIndex, -1, selectedPrayerId, selectedPrayer);
-                            var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex);
+                            var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex);
                             var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
                             uiManager.addNewSlot(actionbarIndex, slotHtml);
                             bootbox.hideAll();
 
                         } else {
 
-                            var slot = actionbar[slotIndex];
+                            var slot = profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
 
                             if (slot.type == "CompoundItem") {
                                 slot.actions.push({ widgetId: selectedPrayerId, modifier: true, type: "PrayerItem" });
                                 actionbar[slotIndex] = slot;
                                 profileManager.saveActionbar(profileName, actionbarIndex, actionbar);
-                                var actionIndex = actionbar[slotIndex].actions.length - 1;
-                                var actionSlot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex);
+                                var totalActions = actionbar[slotIndex].actions.length - 1;
+                                var actionSlot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, totalActions);
                                 var slotHtml = htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, actionSlot);
                                 uiManager.addNewSlot(actionbarIndex, slotHtml, slotIndex);
                                 bootbox.hideAll();
                             } else {
-                                profileManager.updateItemAction(actionbarIndex, slotIndex, selectedPrayer, actionIndex, selectedPrayerId).then(() => {
-                                    uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, `Toggle ${selectedPrayer.name}`);
-                                    uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
-                                    bootbox.hideAll();
-                                });
+                                profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedPrayer, actionIndex, selectedPrayerId)
+                                uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, `Toggle ${selectedPrayer.name}`);
+                                uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
+                                bootbox.hideAll();
                             }
 
                         }
