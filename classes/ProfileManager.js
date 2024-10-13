@@ -96,6 +96,18 @@ class ProfileManager {
         storage.save(profileKey, profiles);
     }
 
+    createProfile(profileName) {
+        let profileData = [[[]],[]];
+        this.saveProfile(profileName, profileData);
+    }
+
+    deleteProfile(profileName) {
+        let profiles = storage.load(profileKey);
+        const profileIndex = profiles.findIndex(profile => profile[0] === profileName);
+        profiles.splice(profileIndex, 1);
+        storage.save(profileKey, profiles);
+    }
+
     // ===============
     // Slot operations
     // ===============

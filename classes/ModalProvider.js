@@ -264,6 +264,7 @@ class ModalProvider {
             const profileName = $('#profile-name').val().trim();
             var jsonData = $('#json-data').val().trim();
             profileManager.importProfile(profileName, jsonData);
+            uiManager.loadProfileMenuData();
         };
     }
 

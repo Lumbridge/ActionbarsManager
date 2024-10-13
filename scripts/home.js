@@ -7,6 +7,19 @@ $(async function () {
     uiManager.loadApiControls();
     uiManager.loadProfileMenuData();
 
+    $(document).on("click", "#create-profile-button", function () {
+        modalProvider.showPromptModal("Enter profile name", function (profileName) {
+            profileManager.createProfile(profileName);
+            uiManager.loadProfileMenuData();
+        });
+    });
+
+    $(document).on("click", "#delete-profile-button", function () {
+        profileManager.deleteProfile($('#profileDropdown').text());
+        uiManager.loadProfileMenuData();
+        loadActionbars();
+    });
+
     $(document).on("click", "#set-endpoint-button", function () {
         var apiBaseUrlText = $("#api-base-url").val();
         useProxy = $("#use-proxy").is(":checked");
@@ -23,6 +36,9 @@ $(async function () {
         const profileName = $(this).attr('id');
         $('#profileDropdown').text(profileName);
         await loadActionbars();
+        $("#export-button").removeClass('d-none');
+        $("#delete-profile-button").removeClass('d-none');
+        $("#add-actionbar-button").removeClass('d-none');        
     });
 
     $(document).on("contextmenu", ".PrayerItem", function (e) {
@@ -351,6 +367,10 @@ async function loadActionbars() {
     let profileName = profileManager.getCurrentProfileName();
 
     $('#actionbars-container').empty();
+
+    if(profileName.includes('Select Profile (')) {
+        return;
+    }
 
     var actionbars = profileManager.getActionbars(profileName);
 

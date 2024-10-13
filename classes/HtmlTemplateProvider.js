@@ -35,7 +35,6 @@ class HtmlTemplateProvider {
 
     getSlotLoadingTemplate(actionbarIndex, slotIndex) {
         return `
-            <div class="col-auto my-2 my-xxl-0">
                 <div class="d-flex flex-column justify-content-center align-items-center bg-dark-subtle slot-container border border-2 rounded p-2 my-1 cursor-not-allowed loading-slot" 
                      data-actionbar-index="${actionbarIndex}" 
                      data-slot-index="${slotIndex}" 
@@ -44,7 +43,6 @@ class HtmlTemplateProvider {
                         <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
-            </div>
         `;
     }
 

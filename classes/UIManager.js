@@ -80,7 +80,7 @@ class UIManager {
                     
                     let keybind = convertedKeyBinds[slotIndex];
 
-                    if(!keybind){
+                    if(!keybind) {
                         keybind = "no keybind";
                     }
 
@@ -88,7 +88,7 @@ class UIManager {
 
                     $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).replaceWith(slotHtml);
 
-                    $(`.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).parent().replaceWith(slotHtml);
+                    $(`.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).replaceWith(slotHtml);
                 })
             );
         }

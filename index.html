@@ -35,18 +35,16 @@
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <div id="import-data" class="nav-link link cursor-pointer"><i
-                                class="fa-solid fa-file-import"></i> Import data</div>
+                        <div id="import-data" class="nav-link link cursor-pointer"><i class="fa-solid fa-file-import"></i> Import plugin data</div>
                     </li>
                     <li class="nav-item">
-                        <div id="reset-data" class="nav-link link cursor-pointer link-danger"><i
-                                class="fa-solid fa-trash-can"></i> Reset data</div>
+                        <div id="reset-data" class="nav-link link cursor-pointer link-danger"><i class="fa-solid fa-trash-can"></i> Reset data</div>
                     </li>
                     <li class="nav-item">
                         <div class="input-group" style="width: 22rem;">
                             <input type="text" id="api-base-url" class="form-control" placeholder="API base URL">
                             <div class="input-group-text">
-                                <input class="form-check-input mt-0" type="checkbox" id="use-proxy"
+                                <input class="form-check-input mt-0" type="checkbox" id="use-proxy" 
                                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Use CORS proxy">
                             </div>
                             <button class="btn btn-primary" type="button" id="set-endpoint-button">
@@ -76,11 +74,17 @@
                             <!-- profiles will be populated here -->
                         </ul>
                     </div>
+                    <div id="delete-profile-button-container">
+                        <button class="btn btn-danger me-2" id="delete-profile-button"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                    <div id="create-profile-button-container">
+                        <button class="btn btn-primary me-2" id="create-profile-button"><i class="fa-solid fa-plus"></i> Create profile</button>
+                    </div>
                     <div id="export-button-container">
-                        <button class="btn btn-primary" id="export-button"><i class="fa-solid fa-file-export"></i> Export</button>
+                        <button class="btn btn-primary me-2 d-none" id="export-button"><i class="fa-solid fa-file-export"></i> Export to plugin</button>
                     </div>
                     <div id="add-actionbar-container">
-                        <button class="btn btn-primary ms-2" id="add-actionbar-button"><i class="fa-solid fa-plus"></i> Add actionbar</button>
+                        <button class="btn btn-primary d-none" id="add-actionbar-button"><i class="fa-solid fa-plus"></i> Add actionbar</button>
                     </div>
                 </div>
             </div>
