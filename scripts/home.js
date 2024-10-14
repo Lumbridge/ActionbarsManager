@@ -204,6 +204,11 @@ $(async function () {
             callback: function () {
                 modalProvider.showPrayerSelectionModal(actionbarIndex, slotIndex, actionIndex);
             }
+        },  {
+            text: 'Set keybind',
+            callback: function () {
+                modalProvider.showKeybindModal(slotIndex);
+            }
         }, {
             text: 'Delete',
             callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
@@ -235,6 +240,11 @@ $(async function () {
             callback: function () {
                 modalProvider.showOrbSelectionModal(actionbarIndex, slotIndex, actionIndex);
             }
+        },  {
+            text: 'Set keybind',
+            callback: function () {
+                modalProvider.showKeybindModal(slotIndex);
+            }
         }, {
             text: 'Delete',
             callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
@@ -265,6 +275,11 @@ $(async function () {
             text: 'Add slot',
             callback: function () {
                 modalProvider.showAddNewSlotModal(actionbarIndex, slotIndex);
+            }
+        },  {
+            text: 'Set keybind',
+            callback: function () {
+                modalProvider.showKeybindModal(slotIndex);
             }
         }, {
             text: 'Rename',
@@ -301,7 +316,7 @@ $(async function () {
             callback: function () {
                 modalProvider.showKeybindModal(slotIndex);
             }
-        },{
+        }, {
             text: 'Delete',
             callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
             css: 'color:red;border-bottom-width:5px;'
@@ -367,6 +382,11 @@ $(async function () {
             text: 'Delete',
             callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
             css: 'color:red;'
+        },  {
+            text: 'Set keybind',
+            callback: function () {
+                modalProvider.showKeybindModal(slotIndex);
+            }
         }, {
             text: 'Convert to compound',
             callback: function () {
@@ -389,6 +409,11 @@ $(async function () {
             text: 'Edit',
             callback: function () {
                 modalProvider.showSpellbookSelectionModal(actionbarIndex, slotIndex, actionIndex);
+            }
+        },  {
+            text: 'Set keybind',
+            callback: function () {
+                modalProvider.showKeybindModal(slotIndex);
             }
         }, {
             text: 'Convert to compound',
