@@ -2,7 +2,7 @@
 class NotificationManager {
 
     constructor() {
-        
+
         toastr.options = {
             "closeButton": true,
             "debug": false,

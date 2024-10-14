@@ -2,7 +2,7 @@ class HtmlTemplateProvider {
 
     getSlotTemplate(actionbarIndex, slotIndex, slot) {
 
-        if(!slot) {
+        if (!slot) {
             slot = profileManager.getActionbarSlot(profileManager.getCurrentProfileName(), actionbarIndex, slotIndex);
         }
 

@@ -16,14 +16,14 @@ class ProfileManager {
     // ====================
     // Actionbar operations
     // ====================
-    
-    addEmptyActionbar(profileName){
+
+    addEmptyActionbar(profileName) {
         let profileData = this.getProfile(profileName);
         profileData[1][0].push([]);
         this.saveProfile(profileName, profileData);
     }
 
-    deleteActionbar(profileName, actionbarIndex){
+    deleteActionbar(profileName, actionbarIndex) {
         let profileData = this.getProfile(profileName);
         profileData[1][0].splice(actionbarIndex, 1);
         this.saveProfile(profileName, profileData);
@@ -97,7 +97,7 @@ class ProfileManager {
     }
 
     createProfile(profileName) {
-        let profileData = [[[]],[]];
+        let profileData = [[[]], []];
         this.saveProfile(profileName, profileData);
     }
 
@@ -162,7 +162,7 @@ class ProfileManager {
             slot.flavourText = `Toggle ${widgetName}`;
         } else if (slot.type == 'OrbItem') {
             slot.flavourText = slot.widgetType || slot.widgetId;
-        } else if (slot.type == 'SpellBookItem'){
+        } else if (slot.type == 'SpellBookItem') {
             slot.flavourText = `Cast ${widgetName}`;
         }
     }

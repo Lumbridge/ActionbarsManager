@@ -185,7 +185,7 @@ class WidgetLookup {
             { widgetId: 14286993, wikiName: 'Geomancy', name: 'Geomancy' },
             { widgetId: 14286994, wikiName: 'Spin_Flax', name: 'Spin Flax' },
             { widgetId: 14286995, wikiName: 'Ourania_Teleport', name: 'Ourania Teleport' }
-        ];        
+        ];
 
         this.arceuusSpells = [
             { widgetId: 14286996, wikiName: 'Arceuus_Home_Teleport', name: 'Arceuus Home Teleport' },
@@ -256,9 +256,9 @@ class WidgetLookup {
         let widget = undefined;
 
         // check if widgetId is all numbers
-        if(/^\d+$/.test(widgetId)) {
+        if (/^\d+$/.test(widgetId)) {
             widget = this.allWidgets.find(w => w.widgetId == widgetId);
-        }else{
+        } else {
             widgetId == 'LastActorItem' ? widget = this.allWidgets.find(w => w.type == widgetId) : widget = this.allWidgets.find(w => w.widgetType == widgetId);
         }
 
@@ -270,15 +270,15 @@ class WidgetLookup {
         let widget = undefined;
 
         // check if widgetId is all numbers
-        if(/^\d+$/.test(widgetId)) {
+        if (/^\d+$/.test(widgetId)) {
             widget = this.allWidgets.find(w => w.widgetId == widgetId);
-        }else{
+        } else {
             widgetId == 'LastActorItem' ? widget = this.allWidgets.find(w => w.type == widgetId) : widget = this.allWidgets.find(w => w.widgetType == widgetId);
         }
-        
+
         let wikiName = widget.wikiName;
 
-        if(!wikiName.includes('.')){
+        if (!wikiName.includes('.')) {
             wikiName += '.png';
         }
 

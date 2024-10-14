@@ -114,7 +114,7 @@ class ItemFetcher {
                 return "";
             }
 
-            if(item.imageLink){
+            if (item.imageLink) {
                 return item.imageLink;
             }
 
@@ -153,15 +153,15 @@ class ItemFetcher {
             }
 
             let itemId = -1;
-            if(actionIndex != -1){
+            if (actionIndex != -1) {
                 itemId = actionbar[slotIndex].actions[actionIndex].itemId;
-            }else{
+            } else {
                 itemId = actionbar[slotIndex].itemId;
             }
 
             var item = await this.fetchItem(itemId);
 
-            if(!item){
+            if (!item) {
                 return [];
             }
 
@@ -178,7 +178,7 @@ class ItemFetcher {
         }
     }
 
-    async fetchItemActionsById(itemId){
+    async fetchItemActionsById(itemId) {
         try {
 
             if (!itemId) {

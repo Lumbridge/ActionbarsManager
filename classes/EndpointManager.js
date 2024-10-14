@@ -10,7 +10,7 @@ class EndpointManager {
             this.saveEndpointDefaults();
         }
     }
-    
+
     saveEndpointDefaults() {
         storage.save('apiBaseUrl', defaultApiBaseUrl);
         storage.save('useProxy', useProxy);

@@ -9,7 +9,7 @@ class ContextMenuProvider {
 
         // loop through the menu options and create the html
         menuOptions.forEach(option => {
-            if(option.css){
+            if (option.css) {
                 menuOptionsHtml += `<li class="list-group-item context-menu-item cursor-pointer" style="${option.css}">${option.text}</li>`;
                 return;
             }

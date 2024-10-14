@@ -46,17 +46,17 @@ class ModalProvider {
                             modalProvider.showItemSearchModal(actionbarIndex, slotIndex);
                         } else if (selectedType == "PrayerItem") {
                             modalProvider.showPrayerSelectionModal(actionbarIndex, slotIndex);
-                        } else if (selectedType == "OrbItem"){
+                        } else if (selectedType == "OrbItem") {
                             modalProvider.showOrbSelectionModal(actionbarIndex, slotIndex);
-                        } else if (selectedType == "LastActorItem"){
-                            
+                        } else if (selectedType == "LastActorItem") {
+
                             var slot = actionbar[slotIndex];
 
-                            if(slot.type == "CompoundItem") {
+                            if (slot.type == "CompoundItem") {
                                 slot.actions.push({ type: selectedType, customSpriteId: -1 });
                                 await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
                             } else {
-                                await modalProvider.addNewSlotToActionbar(actionbarIndex, slotIndex, "LastActorItem", -1, -1, {name: "Attack Last Actor", customSpriteId: -1});
+                                await modalProvider.addNewSlotToActionbar(actionbarIndex, slotIndex, "LastActorItem", -1, -1, { name: "Attack Last Actor", customSpriteId: -1 });
                             }
 
                         } else if (selectedType == "SpellBookItem") {
@@ -298,7 +298,7 @@ class ModalProvider {
     }
 
     async handleModalSave(actionbar, actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem, imageLink) {
-        
+
         let profileName = profileManager.getCurrentProfileName();
 
         if (slotIndex == actionbar.length) {
@@ -310,7 +310,7 @@ class ModalProvider {
             var slot = profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
 
             if (slot.type == "CompoundItem") {
-                
+
                 slot.actions.push({ widgetId: selectedValue, modifier: true, type: type });
                 await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
 
