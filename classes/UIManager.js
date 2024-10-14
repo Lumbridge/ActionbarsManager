@@ -86,9 +86,13 @@ class UIManager {
 
                     var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, actionbarSlot);
 
-                    $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).replaceWith(slotHtml);
-
-                    $(`.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).replaceWith(slotHtml);
+                    const loadingSelector = `.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`;
+                    
+                    if($(loadingSelector).length) {
+                        $(loadingSelector).replaceWith(slotHtml);
+                    } else {
+                        $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).parent().replaceWith(slotHtml);
+                    }
                 })
             );
         }

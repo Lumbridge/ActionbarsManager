@@ -144,10 +144,11 @@ class ProfileManager {
                 slot.itemId = id;
                 break;
             case "PrayerItem":
-            case "OrbItem":
-            case "SpellbookItem":
+            case "SpellBookItem":
                 slot.widgetId = id;
                 break;
+            case "OrbItem":
+                slot.widgetType = id;
         }
         return slot;
     }
@@ -161,6 +162,8 @@ class ProfileManager {
             slot.flavourText = `Toggle ${widgetName}`;
         } else if (slot.type == 'OrbItem') {
             slot.flavourText = slot.widgetType || slot.widgetId;
+        } else if (slot.type == 'SpellBookItem'){
+            slot.flavourText = `Cast ${widgetName}`;
         }
     }
 
@@ -214,6 +217,14 @@ class ProfileManager {
         }
 
         return slot;
+    }
+
+    async getImageLinkById(type, id) {
+        if (type == "ItemItem") {
+            return await itemFetcher.fetchItemImage(id);
+        }
+
+        return widgetLookup.fetchItemImage(id);
     }
 
     async getImageLink(type, actionbarSlot) {

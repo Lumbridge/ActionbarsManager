@@ -35,10 +35,10 @@ class JsonTemplateProvider {
         `;
     }
 
-    getSpellbookItemTemplate(widgetId, customSprite = -1) {
+    getSpellBookItemTemplate(widgetId, customSprite = -1) {
         return `
             {
-                "type": "SpellbookItem",
+                "type": "SpellBookItem",
                 "widgetId": ${widgetId},
                 "customSprite": ${customSprite}
             }
@@ -56,6 +56,15 @@ class JsonTemplateProvider {
         `;
     }
 
+    getAttackLastActorTemplate(customSprite = -1) {
+        return `
+            {
+                "type": "LastActorItem",
+                "customSprite": "${customSprite}"
+            }
+        `;
+    }
+
     getTemplate(type, id, action) {
         switch (type) {
             case "ItemItem":
@@ -64,10 +73,12 @@ class JsonTemplateProvider {
                 return jsonTemplateProvider.getPrayerTemplate(false, id, action);
             case "OrbItem":
                 return jsonTemplateProvider.getOrbTemplate(false, id);
-            case "SpellbookItem":
-                return jsonTemplateProvider.getSpellbookItemTemplate(id);
+            case "SpellBookItem":
+                return jsonTemplateProvider.getSpellBookItemTemplate(id);
             case "CompoundItem":
                 return jsonTemplateProvider.getCompoundTemplate();
+            case "LastActorItem":
+                return jsonTemplateProvider.getAttackLastActorTemplate();
             default:
                 return '';
         }

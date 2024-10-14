@@ -234,7 +234,7 @@ $(async function () {
         let menuOptions = [{
                 text: 'Edit',
                 callback: function(){ 
-                    showOrbSelectionModal(actionbarIndex, slotIndex, actionIndex);
+                    modalProvider.showOrbSelectionModal(actionbarIndex, slotIndex, actionIndex);
                 }
             }, {
                 text: 'Delete',
@@ -371,6 +371,28 @@ $(async function () {
     
             contextMenuProvider.showContextMenu(e, menuOptions);
     });
+
+    $(document).on("contextmenu", ".SpellBookItem", function (e) {
+            
+        e.preventDefault();
+
+        const slotIndex = $(this).attr('data-slot-index');
+        const actionbarIndex = $(this).attr('data-actionbar-index');
+        const actionIndex = $(this).attr('data-action-index');
+
+        let menuOptions = [{
+            text: 'Delete',
+            callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
+            css: 'color:red;'
+        },{
+            text: 'Convert to compound',
+            callback: function(){ 
+                convertToCompound(actionbarIndex, slotIndex);
+            }
+        }];
+
+        contextMenuProvider.showContextMenu(e, menuOptions);
+});        
 
 });
 

@@ -232,7 +232,14 @@ class WidgetLookup {
             { widgetId: 14287038, wikiName: 'Resurrect_Greater_Ghost', name: 'Resurrect Greater Ghost' },
             { widgetId: 14287039, wikiName: 'Resurrect_Greater_Skeleton', name: 'Resurrect Greater Skeleton' },
             { widgetId: 14287040, wikiName: 'Resurrect_Greater_Zombie', name: 'Resurrect Greater Zombie' }
-        ];        
+        ];
+
+        this.allSpells = [
+            ...this.standardSpells,
+            ...this.ancientSpells,
+            ...this.lunarSpells,
+            ...this.arceuusSpells
+        ];
 
         this.allWidgets = [
             ...this.normalPrayers,

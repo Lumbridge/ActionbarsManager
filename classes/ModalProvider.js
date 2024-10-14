@@ -11,83 +11,17 @@ class ModalProvider {
         });
     }
 
-    showActionSelectionModal(actions, actionbarIndex, slotIndex, itemId, actionIndex, imageLink) {
-
-        let profileName = profileManager.getCurrentProfileName();
-
-        actions.push("Use");
-
-        bootbox.dialog({
-            title: 'Select Action',
-            message: `
-                            <div class="form-group">
-                                <label for="action-select">Select an action</label>
-                                <select id="action-select" class="form-control">
-                                    ${actions.map(action => `<option value="${action}">${action}</option>`).join('')}
-                                </select>
-                            </div>
-                        `,
-            buttons: {
-                cancel: { label: "Cancel", className: 'btn-secondary' },
-                save: {
-                    label: "Save",
-                    className: 'btn-primary',
-                    callback: async function () {
-                        const selectedAction = $('#action-select').val();
-
-                        var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
-
-                        if (!slotIndex || slotIndex == "undefined") {
-                            slotIndex = actionbar.length;
-                        }
-
-                        if (slotIndex == actionbar.length) {
-
-                            profileManager.addItemToActionbar(profileName, "ItemItem", actionbarIndex, slotIndex, -1, itemId, selectedAction);
-                            var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex);
-                            var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
-                            uiManager.addNewSlot(actionbarIndex, slotHtml);
-                            bootbox.hideAll();
-
-                        } else {
-
-                            var slot = actionbar[slotIndex];
-
-                            if (slot.type == "CompoundItem") {
-                                slot.actions.push({ action: selectedAction, itemId: itemId, modifier: true, type: "ItemItem" });
-                                actionbar[slotIndex] = slot;
-                                profileManager.saveActionbar(profileName, actionbarIndex, actionbar);
-                                var totalActions = actionbar[slotIndex].actions.length - 1;
-                                var actionSlot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, totalActions);
-                                var slotHtml = htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, actionSlot);
-                                uiManager.addNewSlot(actionbarIndex, slotHtml, slotIndex);
-                                bootbox.hideAll();
-                            } else {
-                                profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedAction, actionIndex, itemId);
-                                uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
-                                uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
-                                bootbox.hideAll();
-                            }
-
-                        }
-                    }
-                }
-            }
-        });
-
-    }
-
     showAddNewSlotModal(actionbarIndex, slotIndex) {
         // show a context menu to select the type of slot to add: options are Item, Prayer, Spellbook and Compound
         bootbox.dialog({
             title: 'Add New Slot',
             message: `
                 <div class="form-group">
-                    <label for="slot-type-select">Select Slot Type</label>
-                    <select id="slot-type-select" class="form-control">
+                    <label for="option-select">Select Slot Type</label>
+                    <select id="option-select" class="form-control">
                         <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="ItemItem">Item</option>
                         <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="PrayerItem">Prayer</option>
-                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="SpellbookItem">Spellbook</option>
+                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="SpellBookItem">Spell</option>
                         <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="OrbItem">Orb</option>
                         <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="LastActionItem">Attack last actor</option>
                     </select>
@@ -98,9 +32,15 @@ class ModalProvider {
                 save: {
                     label: "Choose",
                     className: 'btn-primary',
-                    callback: function () {
+                    callback: async function () {
 
-                        const selectedType = $('#slot-type-select').val();
+                        const selectedType = $('#option-select').val();
+
+                        let actionbar = profileManager.getActionbar(profileManager.getCurrentProfileName(), actionbarIndex);
+
+                        if (!slotIndex) {
+                            slotIndex = actionbar.length;
+                        }
 
                         if (selectedType == "ItemItem") {
                             modalProvider.showItemSearchModal(actionbarIndex, slotIndex);
@@ -109,10 +49,11 @@ class ModalProvider {
                         } else if (selectedType == "OrbItem"){
                             modalProvider.showOrbSelectionModal(actionbarIndex, slotIndex);
                         } else if (selectedType == "LastActionItem"){
-                            profileManager.addItemToActionbar(profileManager.getCurrentProfileName(), "LastActorItem", actionbarIndex, slotIndex, -1, -1, "Attack Last Actor");
-                            var slot = profileManager.getActionbarSlot(profileManager.getCurrentProfileName(), actionbarIndex, slotIndex);
-                            var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
-                            uiManager.addNewSlot(actionbarIndex, slotHtml);
+
+                            await modalProvider.addNewSlotToActionbar(actionbarIndex, slotIndex, "LastActorItem", -1, -1, {name: "Attack Last Actor", customSpriteId: -1});
+
+                        } else if (selectedType == "SpellBookItem") {
+                            modalProvider.showSpellbookSelectionModal(actionbarIndex, slotIndex);
                         }
                     }
                 }
@@ -180,16 +121,77 @@ class ModalProvider {
 
     }
 
+    showActionSelectionModal(actions, actionbarIndex, slotIndex, itemId, actionIndex, imageLink) {
+
+        let profileName = profileManager.getCurrentProfileName();
+
+        actions.push("Use");
+
+        bootbox.dialog({
+            title: 'Select Action',
+            message: `
+                            <div class="form-group">
+                                <label for="option-select">Select an action</label>
+                                <select id="option-select" class="form-control">
+                                    ${actions.map(action => `<option value="${action}">${action}</option>`).join('')}
+                                </select>
+                            </div>
+                        `,
+            buttons: {
+                cancel: { label: "Cancel", className: 'btn-secondary' },
+                save: {
+                    label: "Save",
+                    className: 'btn-primary',
+                    callback: async function () {
+                        const selectedAction = $('#option-select').val();
+
+                        var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
+
+                        if (!slotIndex || slotIndex == "undefined") {
+                            slotIndex = actionbar.length;
+                        }
+
+                        if (slotIndex == actionbar.length) {
+
+                            profileManager.addItemToActionbar(profileName, "ItemItem", actionbarIndex, slotIndex, -1, itemId, selectedAction);
+                            var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex);
+                            var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
+                            uiManager.addNewSlot(actionbarIndex, slotHtml);
+                            bootbox.hideAll();
+
+                        } else {
+
+                            var slot = actionbar[slotIndex];
+
+                            if (slot.type == "CompoundItem") {
+                                slot.actions.push({ action: selectedAction, itemId: itemId, modifier: true, type: "ItemItem" });
+                                await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
+                            } else {
+                                profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedAction, actionIndex, itemId);
+                                uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
+                                uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
+                                bootbox.hideAll();
+                            }
+
+                        }
+                    }
+                }
+            }
+        });
+
+    }
+
     showPrayerSelectionModal(actionbarIndex, slotIndex, actionIndex = -1) {
+
         const normalPrayers = widgetLookup.normalPrayers;
 
         bootbox.dialog({
             title: 'Select Prayer',
             message: `
                 <div class="form-group">
-                    <label for="prayer-select">Select a prayer</label>
-                    <select id="prayer-select" class="form-control">
-                        ${normalPrayers.map(prayer => `<option value="${prayer.widgetId}">${prayer.name}</option>`).join('')}
+                    <label for="option-select">Select a prayer</label>
+                    <select id="option-select" class="form-control">
+                        ${normalPrayers.map(prayer => `<option data-type="PrayerItem" value="${prayer.widgetId}">${prayer.name}</option>`).join('')}
                     </select>
                 </div>
             `,
@@ -200,46 +202,51 @@ class ModalProvider {
                     className: 'btn-primary',
                     callback: async function () {
 
-                        const selectedPrayerId = $('#prayer-select').val();
-                        const selectedPrayer = normalPrayers.find(prayer => prayer.widgetId == selectedPrayerId);
+                        const selectedValue = $('#option-select').val();
+                        const selectedLookupItem = widgetLookup.allWidgets.find(widget => widget.widgetId == selectedValue);
                         const profileName = profileManager.getCurrentProfileName();
-                        const imageLink = await profileManager.getImageLink("PrayerItem", {widgetId: selectedPrayerId});
+                        const type = $('#option-select option:selected').attr('data-type');
+                        const imageLink = await profileManager.getImageLinkById(type, selectedValue);
 
                         var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
 
-                        if (!slotIndex) {
-                            slotIndex = actionbar.length;
-                        }
+                        await modalProvider.handleModalSave(actionbar, actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem, imageLink);
 
-                        if (slotIndex == actionbar.length) {
+                    }
+                }
+            }
+        });
+    }
 
-                            profileManager.addItemToActionbar(profileName, "PrayerItem", actionbarIndex, slotIndex, -1, selectedPrayerId, selectedPrayer);
-                            var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex);
-                            var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
-                            uiManager.addNewSlot(actionbarIndex, slotHtml);
-                            bootbox.hideAll();
+    showSpellbookSelectionModal(actionbarIndex, slotIndex, actionIndex = -1) {
+        const allSpells = widgetLookup.allSpells;
 
-                        } else {
+        bootbox.dialog({
+            title: 'Select Spell',
+            message: `
+                <div class="form-group">
+                    <label for="option-select">Select a spell</label>
+                    <select id="option-select" class="form-control">
+                        ${allSpells.map(spell => `<option data-type="SpellBookItem" value="${spell.widgetId}">${spell.name}</option>`).join('')}
+                    </select>
+                </div>
+            `,
+            buttons: {
+                cancel: { label: "Cancel", className: 'btn-secondary' },
+                save: {
+                    label: "Save",
+                    className: 'btn-primary',
+                    callback: async function () {
 
-                            var slot = profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
+                        const selectedValue = $('#option-select').val();
+                        const selectedLookupItem = widgetLookup.allWidgets.find(widget => widget.widgetId == selectedValue);
+                        const profileName = profileManager.getCurrentProfileName();
+                        const type = $('#option-select option:selected').attr('data-type');
+                        const imageLink = await profileManager.getImageLinkById(type, selectedValue);
 
-                            if (slot.type == "CompoundItem") {
-                                slot.actions.push({ widgetId: selectedPrayerId, modifier: true, type: "PrayerItem" });
-                                actionbar[slotIndex] = slot;
-                                profileManager.saveActionbar(profileName, actionbarIndex, actionbar);
-                                var totalActions = actionbar[slotIndex].actions.length - 1;
-                                var actionSlot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, totalActions);
-                                var slotHtml = htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, actionSlot);
-                                uiManager.addNewSlot(actionbarIndex, slotHtml, slotIndex);
-                                bootbox.hideAll();
-                            } else {
-                                profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedPrayer, actionIndex, selectedPrayerId)
-                                uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, `Toggle ${selectedPrayer.name}`);
-                                uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
-                                bootbox.hideAll();
-                            }
+                        var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
 
-                        }
+                        await modalProvider.handleModalSave(actionbar, actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem, imageLink);
 
                     }
                 }
@@ -254,9 +261,9 @@ class ModalProvider {
             title: 'Select Orb',
             message: `
                 <div class="form-group">
-                    <label for="orb-select">Select an orb type</label>
-                    <select id="orb-select" class="form-control">
-                        ${orbs.map(orb => `<option value="${orb.widgetType}">${orb.name}</option>`).join('')}
+                    <label for="option-select">Select an orb type</label>
+                    <select id="option-select" class="form-control">
+                        ${orbs.map(orb => `<option data-type="OrbItem" value="${orb.widgetType}">${orb.name}</option>`).join('')}
                     </select>
                 </div>
             `,
@@ -267,51 +274,70 @@ class ModalProvider {
                     className: 'btn-primary',
                     callback: async function () {
 
-                        const selectedWidgetName = $('#orb-select').val();
-                        const selectedOrb = orbs.find(orb => orb.widgetType == selectedWidgetName);
+                        const selectedValue = $('#option-select').val();
+                        const selectedLookupItem = widgetLookup.allWidgets.find(widget => widget.widgetId == selectedValue);
                         const profileName = profileManager.getCurrentProfileName();
-                        const imageLink = await profileManager.getImageLink("OrbItem", {widgetId: selectedWidgetName});
+                        const type = $('#option-select option:selected').attr('data-type');
+                        const imageLink = await profileManager.getImageLinkById(type, selectedValue);
 
                         var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
 
-                        if (!slotIndex) {
-                            slotIndex = actionbar.length;
-                        }
-
-                        if (slotIndex == actionbar.length) {
-
-                            profileManager.addItemToActionbar(profileName, "OrbItem", actionbarIndex, slotIndex, -1, selectedWidgetName, selectedOrb);
-                            var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex);
-                            var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
-                            uiManager.addNewSlot(actionbarIndex, slotHtml);
-                            bootbox.hideAll();
-
-                        } else {
-
-                            var slot = profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
-
-                            if (slot.type == "CompoundItem") {
-                                slot.actions.push({ widgetId: selectedWidgetName, modifier: true, type: "OrbItem" });
-                                actionbar[slotIndex] = slot;
-                                profileManager.saveActionbar(profileName, actionbarIndex, actionbar);
-                                var totalActions = actionbar[slotIndex].actions.length - 1;
-                                var actionSlot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, totalActions);
-                                var slotHtml = htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, actionSlot);
-                                uiManager.addNewSlot(actionbarIndex, slotHtml, slotIndex);
-                                bootbox.hideAll();
-                            } else {
-                                profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedOrb, actionIndex, selectedWidgetName)
-                                uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedWidgetName);
-                                uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
-                                bootbox.hideAll();
-                            }
-
-                        }
+                        await modalProvider.handleModalSave(actionbar, actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem, imageLink);
 
                     }
                 }
             }
         });
+    }
+
+    async handleModalSave(actionbar, actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem, imageLink) {
+        
+        let profileName = profileManager.getCurrentProfileName();
+
+        if (slotIndex == actionbar.length) {
+
+            await modalProvider.addNewSlotToActionbar(actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem);
+
+        } else {
+
+            var slot = profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
+
+            if (slot.type == "CompoundItem") {
+                
+                slot.actions.push({ widgetId: selectedValue, modifier: true, type: type });
+                await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
+
+            } else {
+
+                profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedLookupItem, actionIndex, selectedValue)
+                uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, `Toggle ${selectedLookupItem.name}`);
+                uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
+                bootbox.hideAll();
+
+            }
+        }
+
+    }
+
+    async addNewSlotToActionbar(actionbarIndex, slotIndex, slotType, actionIndex = -1, actionId, slot) {
+        var profileName = profileManager.getCurrentProfileName();
+        profileManager.addItemToActionbar(profileName, slotType, actionbarIndex, slotIndex, -1, actionId, slot);
+        var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex);
+        var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
+        uiManager.addNewSlot(actionbarIndex, slotHtml);
+        bootbox.hideAll();
+    }
+
+    async updateCompoundChildSlot(actionbarIndex, slotIndex, slot) {
+        let profileName = profileManager.getCurrentProfileName();
+        let actionbar = profileManager.getActionbar(profileName, actionbarIndex);
+        actionbar[slotIndex] = slot;
+        profileManager.saveActionbar(profileName, actionbarIndex, actionbar);
+        var totalActions = actionbar[slotIndex].actions.length - 1;
+        var actionSlot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, totalActions);
+        var slotHtml = htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, actionSlot);
+        uiManager.addNewSlot(actionbarIndex, slotHtml, slotIndex);
+        bootbox.hideAll();
     }
 
     showImportProfileModal() {
