@@ -204,7 +204,13 @@ $(async function () {
             callback: function () {
                 modalProvider.showPrayerSelectionModal(actionbarIndex, slotIndex, actionIndex);
             }
-        },  {
+        }, {
+            text: 'Duplicate',
+            callback: function () {
+                profileManager.duplicateSlot($('#profileDropdown').text(), actionbarIndex, slotIndex, actionIndex);
+                uiManager.updateActionbarSlots(actionbarIndex, $('#profileDropdown').text());
+            }
+        }, {
             text: 'Set keybind',
             callback: function () {
                 modalProvider.showKeybindModal(slotIndex);
@@ -240,7 +246,13 @@ $(async function () {
             callback: function () {
                 modalProvider.showOrbSelectionModal(actionbarIndex, slotIndex, actionIndex);
             }
-        },  {
+        }, {
+            text: 'Duplicate',
+            callback: function () {
+                profileManager.duplicateSlot($('#profileDropdown').text(), actionbarIndex, slotIndex, actionIndex);
+                uiManager.updateActionbarSlots(actionbarIndex, $('#profileDropdown').text());
+            }
+        }, {
             text: 'Set keybind',
             callback: function () {
                 modalProvider.showKeybindModal(slotIndex);
@@ -276,7 +288,13 @@ $(async function () {
             callback: function () {
                 modalProvider.showAddNewSlotModal(actionbarIndex, slotIndex);
             }
-        },  {
+        }, {
+            text: 'Duplicate',
+            callback: function () {
+                profileManager.duplicateSlot($('#profileDropdown').text(), actionbarIndex, slotIndex);
+                uiManager.updateActionbarSlots(actionbarIndex, $('#profileDropdown').text());
+            }
+        }, {
             text: 'Set keybind',
             callback: function () {
                 modalProvider.showKeybindModal(slotIndex);
@@ -310,6 +328,12 @@ $(async function () {
             text: 'Edit',
             callback: function () {
                 modalProvider.showItemSearchModal(actionbarIndex, slotIndex, actionIndex);
+            }
+        }, {
+            text: 'Duplicate',
+            callback: function () {
+                profileManager.duplicateSlot($('#profileDropdown').text(), actionbarIndex, slotIndex, actionIndex);
+                uiManager.updateActionbarSlots(actionbarIndex, $('#profileDropdown').text());
             }
         }, {
             text: 'Set keybind',
@@ -378,11 +402,13 @@ $(async function () {
         const actionbarIndex = $(this).attr('data-actionbar-index');
         const actionIndex = $(this).attr('data-action-index');
 
-        let menuOptions = [{
-            text: 'Delete',
-            callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
-            css: 'color:red;'
-        },  {
+        let menuOptions = [ {
+            text: 'Duplicate',
+            callback: function () {
+                profileManager.duplicateSlot($('#profileDropdown').text(), actionbarIndex, slotIndex, actionIndex);
+                uiManager.updateActionbarSlots(actionbarIndex, $('#profileDropdown').text());
+            }
+        }, {
             text: 'Set keybind',
             callback: function () {
                 modalProvider.showKeybindModal(slotIndex);
@@ -392,6 +418,10 @@ $(async function () {
             callback: function () {
                 convertToCompound(actionbarIndex, slotIndex);
             }
+        }, {
+            text: 'Delete',
+            callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
+            css: 'color:red;'
         }];
 
         contextMenuProvider.showContextMenu(e, menuOptions);

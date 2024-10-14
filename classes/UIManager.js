@@ -92,7 +92,13 @@ class UIManager {
 
                     const loadingSelector = `.loading-slot[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`;
 
-                    if ($(loadingSelector).length) {
+                    let anyLoadingSlots = $(loadingSelector).length;
+                    let anyActiveSlots = $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).length;
+
+                    if(!anyLoadingSlots && !anyActiveSlots) {
+                        uiManager.addNewSlot(actionbarIndex, slotHtml, 0);
+                    }
+                    else if (anyLoadingSlots) {
                         $(loadingSelector).replaceWith(slotHtml);
                     } else {
                         $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).parent().replaceWith(slotHtml);

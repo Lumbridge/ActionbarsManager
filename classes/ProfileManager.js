@@ -112,6 +112,21 @@ class ProfileManager {
     // Slot operations
     // ===============
 
+    duplicateSlot(profileName, actionbarIndex, slotIndex, actionIndex = -1) {
+        let slot = this.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
+        let actionbar = this.getActionbar(profileName, actionbarIndex);
+
+        if (actionIndex != -1) {
+            let parentSlot = actionbar[slotIndex];
+            parentSlot.actions.splice(actionIndex, 0, parentSlot.actions[actionIndex]);
+            actionbar[slotIndex] = parentSlot;
+        } else {
+            actionbar.splice(slotIndex, 0, slot);
+        }
+
+        this.saveActionbar(profileName, actionbarIndex, actionbar);
+    }
+
     saveActionbarSlot(profileName, actionbarIndex, slotIndex, slotData, actionIndex = -1) {
         let actionbar = this.getActionbar(profileName, actionbarIndex);
 
