@@ -23,7 +23,7 @@ class ModalProvider {
                         <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="PrayerItem">Prayer</option>
                         <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="SpellBookItem">Spell</option>
                         <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="OrbItem">Orb</option>
-                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="LastActionItem">Attack last actor</option>
+                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="LastActorItem">Attack last actor</option>
                     </select>
                 </div>
             `,
@@ -48,9 +48,16 @@ class ModalProvider {
                             modalProvider.showPrayerSelectionModal(actionbarIndex, slotIndex);
                         } else if (selectedType == "OrbItem"){
                             modalProvider.showOrbSelectionModal(actionbarIndex, slotIndex);
-                        } else if (selectedType == "LastActionItem"){
+                        } else if (selectedType == "LastActorItem"){
+                            
+                            var slot = actionbar[slotIndex];
 
-                            await modalProvider.addNewSlotToActionbar(actionbarIndex, slotIndex, "LastActorItem", -1, -1, {name: "Attack Last Actor", customSpriteId: -1});
+                            if(slot.type == "CompoundItem") {
+                                slot.actions.push({ type: selectedType, customSpriteId: -1 });
+                                await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
+                            } else {
+                                await modalProvider.addNewSlotToActionbar(actionbarIndex, slotIndex, "LastActorItem", -1, -1, {name: "Attack Last Actor", customSpriteId: -1});
+                            }
 
                         } else if (selectedType == "SpellBookItem") {
                             modalProvider.showSpellbookSelectionModal(actionbarIndex, slotIndex);

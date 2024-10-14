@@ -19,24 +19,24 @@ $(async function () {
             title: "Delete Profile",
             message: "Are you sure you want to delete this profile?",
             buttons: {
-            confirm: {
-                label: 'Yes',
-                className: 'btn-danger'
-            },
-            cancel: {
-                label: 'No',
-                className: 'btn-secondary'
-            }
+                confirm: {
+                    label: 'Yes',
+                    className: 'btn-danger'
+                },
+                cancel: {
+                    label: 'No',
+                    className: 'btn-secondary'
+                }
             },
             callback: function (result) {
-            if (result) {
-                profileManager.deleteProfile($('#profileDropdown').text());
-                uiManager.loadProfileMenuData();
-                loadActionbars();
-                $("#export-button").addClass('d-none');
-                $("#delete-profile-button").addClass('d-none');
-                $("#add-actionbar-button").addClass('d-none');
-            }
+                if (result) {
+                    profileManager.deleteProfile($('#profileDropdown').text());
+                    uiManager.loadProfileMenuData();
+                    loadActionbars();
+                    $("#export-button").addClass('d-none');
+                    $("#delete-profile-button").addClass('d-none');
+                    $("#add-actionbar-button").addClass('d-none');
+                }
             }
         });
     });
@@ -67,26 +67,26 @@ $(async function () {
         let $compoundSlot = $(e.target).closest('.CompoundItem');
         let $compoundSlotChildrenContainer = $compoundSlot.next('.actionbar-slot-details');
         let elementDetailsDisplayed = $compoundSlotChildrenContainer.css('display') !== 'none';
-    
+
         // If the slot details already exist and are hidden, slide them down
         if ($compoundSlotChildrenContainer.length > 0 && !elementDetailsDisplayed) {
             $compoundSlotChildrenContainer.slideDown();
             return;
         }
-    
+
         // If the slot details already exist and are shown, toggle them with slideUp
         if ($compoundSlotChildrenContainer.length > 0 && elementDetailsDisplayed) {
             $compoundSlotChildrenContainer.slideUp();
             return;
         }
-    
+
         let profileName = $('#profileDropdown').text();
         let actionbarIndex = $compoundSlot.attr('data-actionbar-index');
         let slotIndex = $compoundSlot.attr('data-slot-index');
-    
+
         // Append a spinner while loading
         $compoundSlot.find('.keybind').after('<div class="spinner-border text-primary" role="status" style="width:15px; height:15px;"><span class="visually-hidden">Loading...</span></div>');
-    
+
         // Placeholder HTML structure for slots (before data is loaded)
         let actionbarSlot = profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex);
         let actionbarSlotHtml = '';
@@ -94,13 +94,13 @@ $(async function () {
             let placeholderColumn = htmlTemplateProvider.getSlotLoadingTemplate(actionbarIndex, actionIndex); // Placeholder template
             actionbarSlotHtml += placeholderColumn;
         }
-    
+
         // Append placeholders to DOM
         $compoundSlot.after(`<div class="actionbar-slot-details">${actionbarSlotHtml}</div>`);
-    
+
         // Remove the spinner after adding placeholders
         $compoundSlot.find('.spinner-border').remove();
-    
+
         let promises = [];
         for (let actionIndex = 0; actionIndex < actionbarSlot.actions.length; actionIndex++) {
             promises.push(
@@ -110,14 +110,14 @@ $(async function () {
                 })
             );
         }
-    
+
         // Once all promises are resolved, show the content with a slide-down animation
         Promise.all(promises).then(() => {
             $compoundSlot.next('.actionbar-slot-details').slideDown();
             let sortableContainer = $compoundSlot.next('.actionbar-slot-details')[0];
             sortableManager.initializeSortableContainer(sortableContainer, actionbarIndex, slotIndex);
         });
-    });    
+    });
 
     $(document).on("click", "#export-button", function () {
         const profileName = $('#profileDropdown').text();
@@ -159,7 +159,7 @@ $(async function () {
         modalProvider.showAddNewSlotModal(actionbarIndex, slotIndex);
     });
 
-    $(document).on("click", "#add-actionbar-button", function () {   
+    $(document).on("click", "#add-actionbar-button", function () {
         var profileName = $('#profileDropdown').text();
         profileManager.addEmptyActionbar(profileName);
         loadActionbars();
@@ -168,7 +168,7 @@ $(async function () {
     $(document).on("click", ".delete-actionbar", function () {
         var actionbarIndex = $(this).attr('data-actionbar-index');
         var profileName = $('#profileDropdown').text();
-        
+
         bootbox.confirm({
             title: `Delete actionbar ${parseInt(actionbarIndex) + 1}`,
             message: "Are you sure you want to delete this actionbar?",
@@ -192,7 +192,7 @@ $(async function () {
     });
 
     $(document).on("contextmenu", ".PrayerItem", function (e) {
-        
+
         e.preventDefault();
 
         const slotIndex = $(this).attr('data-slot-index');
@@ -200,21 +200,20 @@ $(async function () {
         const actionIndex = $(this).attr('data-action-index');
 
         let menuOptions = [{
-                text: 'Edit',
-                callback: function() { 
-                    modalProvider.showPrayerSelectionModal(actionbarIndex, slotIndex, actionIndex);
-                }
-            }, {
-                text: 'Delete',
-                callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
-                css: 'color:red;'
+            text: 'Edit',
+            callback: function () {
+                modalProvider.showPrayerSelectionModal(actionbarIndex, slotIndex, actionIndex);
             }
-        ]
+        }, {
+            text: 'Delete',
+            callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
+            css: 'color:red;'
+        }]
 
-        if(!actionIndex) {
+        if (!actionIndex) {
             menuOptions.splice(1, 0, {
                 text: 'Convert to compound',
-                callback: function(){ 
+                callback: function () {
                     convertToCompound(actionbarIndex, slotIndex);
                 }
             });
@@ -224,7 +223,7 @@ $(async function () {
     });
 
     $(document).on("contextmenu", ".OrbItem", function (e) {
-        
+
         e.preventDefault();
 
         const slotIndex = $(this).attr('data-slot-index');
@@ -232,21 +231,21 @@ $(async function () {
         const actionIndex = $(this).attr('data-action-index');
 
         let menuOptions = [{
-                text: 'Edit',
-                callback: function(){ 
-                    modalProvider.showOrbSelectionModal(actionbarIndex, slotIndex, actionIndex);
-                }
-            }, {
-                text: 'Delete',
-                callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
-                css: 'color:red;'
+            text: 'Edit',
+            callback: function () {
+                modalProvider.showOrbSelectionModal(actionbarIndex, slotIndex, actionIndex);
             }
+        }, {
+            text: 'Delete',
+            callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
+            css: 'color:red;'
+        }
         ]
 
-        if(!actionIndex) {
+        if (!actionIndex) {
             menuOptions.splice(1, 0, {
                 text: 'Convert to compound',
-                callback: function(){ 
+                callback: function () {
                     convertToCompound(actionbarIndex, slotIndex);
                 }
             });
@@ -256,36 +255,36 @@ $(async function () {
     });
 
     $(document).on("contextmenu", ".CompoundItem", function (e) {
-        
+
         e.preventDefault();
 
         const slotIndex = $(this).attr('data-slot-index');
         const actionbarIndex = $(this).attr('data-actionbar-index');
 
         let menuOptions = [{
-                text: 'Add slot',
-                callback: function(){ 
-                    modalProvider.showAddNewSlotModal(actionbarIndex, slotIndex);
-                }
-            },{
-                text: 'Rename',
-                callback: function() { 
-                    modalProvider.showPromptModal("Enter new name", function(result) {
-                        profileManager.updateSlotName(actionbarIndex, slotIndex, result);
-                        uiManager.setSlotAction(actionbarIndex, slotIndex, -1, result);
-                    });
-                }
-            },{
-                text: 'Delete',
-                callback: confirmDeleteSlot(actionbarIndex, slotIndex),
-                css: 'color:red;'
-            }]
+            text: 'Add slot',
+            callback: function () {
+                modalProvider.showAddNewSlotModal(actionbarIndex, slotIndex);
+            }
+        }, {
+            text: 'Rename',
+            callback: function () {
+                modalProvider.showPromptModal("Enter new name", function (result) {
+                    profileManager.updateSlotName(actionbarIndex, slotIndex, result);
+                    uiManager.setSlotAction(actionbarIndex, slotIndex, -1, result);
+                });
+            }
+        }, {
+            text: 'Delete',
+            callback: confirmDeleteSlot(actionbarIndex, slotIndex),
+            css: 'color:red;'
+        }]
 
         contextMenuProvider.showContextMenu(e, menuOptions);
     });
 
     $(document).on("contextmenu", ".ItemItem", function (e) {
-        
+
         e.preventDefault();
 
         const slotIndex = $(this).attr('data-slot-index');
@@ -294,18 +293,19 @@ $(async function () {
 
         let menuOptions = [{
             text: 'Edit',
-            callback: function(){modalProvider.showItemSearchModal(actionbarIndex, slotIndex, actionIndex) }
-        }, 
-        {
+            callback: function () {
+                modalProvider.showItemSearchModal(actionbarIndex, slotIndex, actionIndex);
+            }
+        }, {
             text: 'Delete',
             callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
             css: 'color:red;border-bottom-width:5px;'
         }];
 
-        if(!actionIndex) {
+        if (!actionIndex) {
             menuOptions.splice(1, 0, {
                 text: 'Convert to compound',
-                callback: function(){ 
+                callback: function () {
                     convertToCompound(actionbarIndex, slotIndex);
                 }
             });
@@ -315,7 +315,7 @@ $(async function () {
 
             menuOptions.push({
                 text: 'Use',
-                callback: function() { 
+                callback: function () {
                     const action = 'Use';
                     profileManager.updateSlotAction(actionbarIndex, slotIndex, action, actionIndex);
                     uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
@@ -325,7 +325,7 @@ $(async function () {
             actions.forEach(action => {
                 menuOptions.push({
                     text: action,
-                    callback: function() { 
+                    callback: function () {
                         profileManager.updateSlotAction(actionbarIndex, slotIndex, action, actionIndex);
                         uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
                     }
@@ -334,46 +334,24 @@ $(async function () {
 
             menuOptions.push({
                 text: 'Custom Action',
-                callback: function() { 
-                    modalProvider.showPromptModal("Enter custom action (action must exist in the right click menu for the item when in inventory or equipped)", 
-                    function(result) {
-                        const action = result;
-                        profileManager.updateSlotAction(actionbarIndex, slotIndex, action, actionIndex);
-                        uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
-                    });
+                callback: function () {
+                    modalProvider.showPromptModal("Enter custom action (action must exist in the right click menu for the item when in inventory or equipped)",
+                        function (result) {
+                            const action = result;
+                            profileManager.updateSlotAction(actionbarIndex, slotIndex, action, actionIndex);
+                            uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, action);
+                        });
                 },
                 css: 'border-top-width:5px;'
             });
-            
+
             contextMenuProvider.showContextMenu(e, menuOptions);
         });
 
     });
 
     $(document).on("contextmenu", ".LastActorItem", function (e) {
-            
-            e.preventDefault();
-    
-            const slotIndex = $(this).attr('data-slot-index');
-            const actionbarIndex = $(this).attr('data-actionbar-index');
-            const actionIndex = $(this).attr('data-action-index');
-    
-            let menuOptions = [{
-                text: 'Delete',
-                callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
-                css: 'color:red;'
-            },{
-                text: 'Convert to compound',
-                callback: function(){ 
-                    convertToCompound(actionbarIndex, slotIndex);
-                }
-            }];
-    
-            contextMenuProvider.showContextMenu(e, menuOptions);
-    });
 
-    $(document).on("contextmenu", ".SpellBookItem", function (e) {
-            
         e.preventDefault();
 
         const slotIndex = $(this).attr('data-slot-index');
@@ -384,15 +362,42 @@ $(async function () {
             text: 'Delete',
             callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
             css: 'color:red;'
-        },{
+        }, {
             text: 'Convert to compound',
-            callback: function(){ 
+            callback: function () {
                 convertToCompound(actionbarIndex, slotIndex);
             }
         }];
 
         contextMenuProvider.showContextMenu(e, menuOptions);
-});        
+    });
+
+    $(document).on("contextmenu", ".SpellBookItem", function (e) {
+
+        e.preventDefault();
+
+        const slotIndex = $(this).attr('data-slot-index');
+        const actionbarIndex = $(this).attr('data-actionbar-index');
+        const actionIndex = $(this).attr('data-action-index');
+
+        let menuOptions = [{
+            text: 'Edit',
+            callback: function () {
+                modalProvider.showSpellbookSelectionModal(actionbarIndex, slotIndex, actionIndex);
+            }
+        }, {
+            text: 'Convert to compound',
+            callback: function () {
+                convertToCompound(actionbarIndex, slotIndex);
+            }
+        }, {
+            text: 'Delete',
+            callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
+            css: 'color:red;'
+        }];
+
+        contextMenuProvider.showContextMenu(e, menuOptions);
+    });
 
 });
 
@@ -438,7 +443,7 @@ async function loadActionbars() {
 
     $('#actionbars-container').empty();
 
-    if(profileName.includes('Select Profile (')) {
+    if (profileName.includes('Select Profile (')) {
         return;
     }
 
@@ -458,7 +463,7 @@ async function loadActionbars() {
         $('#actionbars-container').append(actionbarRow);
 
         for (var slotIndex in actionbars[actionbarIndex]) {
-            
+
             var placeholderColumn = htmlTemplateProvider.getSlotLoadingTemplate(actionbarIndex, slotIndex);
 
             $(`#actionbar-${actionbarIndex}`).append(placeholderColumn);
