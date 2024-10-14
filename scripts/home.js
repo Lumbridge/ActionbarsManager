@@ -297,6 +297,11 @@ $(async function () {
                 modalProvider.showItemSearchModal(actionbarIndex, slotIndex, actionIndex);
             }
         }, {
+            text: 'Set keybind',
+            callback: function () {
+                modalProvider.showKeybindModal(slotIndex);
+            }
+        },{
             text: 'Delete',
             callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
             css: 'color:red;border-bottom-width:5px;'

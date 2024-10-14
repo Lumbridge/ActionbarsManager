@@ -12,6 +12,14 @@ class KeybindManager {
         return this.convertKeyCode(keybinds[slotIndex]);
     }
 
+    setSlotKeybind(profileName, slotIndex, keybind) {
+        var profileData = profileManager.getProfile(profileName);
+        var keybinds = profileData[1][1];
+        keybinds[slotIndex] = keybind;
+        profileData[1][1] = keybinds;
+        profileManager.saveProfile(profileName, profileData);
+    }
+
     // convert keycode to corresponding key
     convertKeyCode(keyCode) {
         if (!keyCode || keyCode.keybind.length != 4) {

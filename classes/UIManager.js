@@ -25,6 +25,10 @@ class UIManager {
         }
     }
 
+    setSlotKeybind(slotIndex, newKeybind) {
+        $(`.slot-container[data-slot-index="${slotIndex}"] .keybind`).text(newKeybind);
+    }
+
     addNewSlot(actionbarIndex, slotHtml, slotIndex) {
         if (slotIndex) {
             $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"] ~ .actionbar-slot-details`).append(slotHtml);

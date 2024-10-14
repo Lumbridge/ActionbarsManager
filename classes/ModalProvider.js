@@ -418,6 +418,45 @@ class ModalProvider {
 
     }
 
+    showKeybindModal(slotIndex) {
+
+        bootbox.dialog({
+            title: 'Set Keybind',
+            message: `
+                <div class="form-group">
+                    <label for="keybind-input">Press a key to set the keybind</label>
+                    <input type="text" id="keybind-input" class="form-control" readonly>
+                </div>
+            `,
+            buttons: {
+                cancel: { label: "Cancel", className: 'btn-secondary' },
+                save: {
+                    label: "Save",
+                    className: 'btn-primary',
+                    callback: function () {
+                        const keybind = $('#keybind-input').val();
+                        if (keybind) {
+                            const key = $('#keybind-input').attr('data-key');
+                            const keyCode = $('#keybind-input').attr('data-keycode');
+                            let keybindData = { key: slotIndex, keybind: `${keyCode}:0` };    
+                            keybindManager.setSlotKeybind(profileManager.getCurrentProfileName(), slotIndex, keybindData);
+                            uiManager.setSlotKeybind(slotIndex, key);
+                        }
+                    }
+                }
+            }
+        });
+
+        $(document).off('keydown').on('keydown', function (e) {
+            const key = e.key.toUpperCase();
+            const keyCode = e.keyCode;
+            $('#keybind-input').attr('data-keycode', keyCode);
+            $('#keybind-input').attr('data-key', key);
+            $('#keybind-input').val(`${key} (KeyCode: ${keyCode})`);
+        });
+
+    }
+
 }
 
 var modalProvider = new ModalProvider();
