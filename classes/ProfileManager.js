@@ -160,7 +160,7 @@ class ProfileManager {
         } else if (slot.type == 'PrayerItem') {
             slot.flavourText = `Toggle ${widgetName}`;
         } else if (slot.type == 'OrbItem') {
-            slot.flavourText = slot.widgetType;
+            slot.flavourText = slot.widgetType || slot.widgetId;
         }
     }
 
@@ -194,6 +194,13 @@ class ProfileManager {
         this.saveActionbar(profileName, actionbarIndex, actionbar);
     }
 
+    updateSlotName(actionbarIndex, slotIndex, name, actionIndex = -1) {
+        let profileName = this.getCurrentProfileName();
+        let slot = this.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
+        slot.name = name;
+        this.saveActionbarSlot(profileName, actionbarIndex, slotIndex, slot, actionIndex);
+    }
+
     // API and image data enrichment
     async getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex = -1, addApiData = true, addImageLink = true) {
         let slot = this.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
@@ -219,7 +226,7 @@ class ProfileManager {
             return await itemFetcher.fetchItemImage(spriteItemId);
         }
 
-        return widgetLookup.fetchItemImage(actionbarSlot.widgetType || actionbarSlot.widgetId);
+        return widgetLookup.fetchItemImage(actionbarSlot.widgetType || actionbarSlot.widgetId || type);
     }
 
     validateImportData(profileName, jsonData) {

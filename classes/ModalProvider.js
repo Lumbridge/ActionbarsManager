@@ -88,7 +88,8 @@ class ModalProvider {
                         <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="ItemItem">Item</option>
                         <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="PrayerItem">Prayer</option>
                         <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="SpellbookItem">Spellbook</option>
-                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="CompoundItem">Compound</option>
+                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="OrbItem">Orb</option>
+                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="LastActionItem">Attack last actor</option>
                     </select>
                 </div>
             `,
@@ -105,6 +106,13 @@ class ModalProvider {
                             modalProvider.showItemSearchModal(actionbarIndex, slotIndex);
                         } else if (selectedType == "PrayerItem") {
                             modalProvider.showPrayerSelectionModal(actionbarIndex, slotIndex);
+                        } else if (selectedType == "OrbItem"){
+                            modalProvider.showOrbSelectionModal(actionbarIndex, slotIndex);
+                        } else if (selectedType == "LastActionItem"){
+                            profileManager.addItemToActionbar(profileManager.getCurrentProfileName(), "LastActorItem", actionbarIndex, slotIndex, -1, -1, "Attack Last Actor");
+                            var slot = profileManager.getActionbarSlot(profileManager.getCurrentProfileName(), actionbarIndex, slotIndex);
+                            var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
+                            uiManager.addNewSlot(actionbarIndex, slotHtml);
                         }
                     }
                 }
@@ -227,6 +235,73 @@ class ModalProvider {
                             } else {
                                 profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedPrayer, actionIndex, selectedPrayerId)
                                 uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, `Toggle ${selectedPrayer.name}`);
+                                uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
+                                bootbox.hideAll();
+                            }
+
+                        }
+
+                    }
+                }
+            }
+        });
+    }
+
+    showOrbSelectionModal(actionbarIndex, slotIndex, actionIndex = -1) {
+        const orbs = widgetLookup.orbs;
+
+        bootbox.dialog({
+            title: 'Select Orb',
+            message: `
+                <div class="form-group">
+                    <label for="orb-select">Select an orb type</label>
+                    <select id="orb-select" class="form-control">
+                        ${orbs.map(orb => `<option value="${orb.widgetType}">${orb.name}</option>`).join('')}
+                    </select>
+                </div>
+            `,
+            buttons: {
+                cancel: { label: "Cancel", className: 'btn-secondary' },
+                save: {
+                    label: "Save",
+                    className: 'btn-primary',
+                    callback: async function () {
+
+                        const selectedWidgetName = $('#orb-select').val();
+                        const selectedOrb = orbs.find(orb => orb.widgetType == selectedWidgetName);
+                        const profileName = profileManager.getCurrentProfileName();
+                        const imageLink = await profileManager.getImageLink("OrbItem", {widgetId: selectedWidgetName});
+
+                        var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
+
+                        if (!slotIndex) {
+                            slotIndex = actionbar.length;
+                        }
+
+                        if (slotIndex == actionbar.length) {
+
+                            profileManager.addItemToActionbar(profileName, "OrbItem", actionbarIndex, slotIndex, -1, selectedWidgetName, selectedOrb);
+                            var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex);
+                            var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
+                            uiManager.addNewSlot(actionbarIndex, slotHtml);
+                            bootbox.hideAll();
+
+                        } else {
+
+                            var slot = profileManager.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
+
+                            if (slot.type == "CompoundItem") {
+                                slot.actions.push({ widgetId: selectedWidgetName, modifier: true, type: "OrbItem" });
+                                actionbar[slotIndex] = slot;
+                                profileManager.saveActionbar(profileName, actionbarIndex, actionbar);
+                                var totalActions = actionbar[slotIndex].actions.length - 1;
+                                var actionSlot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, totalActions);
+                                var slotHtml = htmlTemplateProvider.getChildSlotTemplate(actionbarIndex, slotIndex, actionSlot);
+                                uiManager.addNewSlot(actionbarIndex, slotHtml, slotIndex);
+                                bootbox.hideAll();
+                            } else {
+                                profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedOrb, actionIndex, selectedWidgetName)
+                                uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedWidgetName);
                                 uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
                                 bootbox.hideAll();
                             }

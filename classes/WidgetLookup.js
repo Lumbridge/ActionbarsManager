@@ -35,7 +35,7 @@ class WidgetLookup {
         ];
 
         this.other = [
-            { type: 'LastActionItem', wikiName: 'Attack_icon', name: 'Attack last actor' },
+            { type: 'LastActorItem', wikiName: 'Attack_icon', name: 'Attack last actor' },
         ];
 
         this.orbs = [
@@ -252,7 +252,7 @@ class WidgetLookup {
         if(/^\d+$/.test(widgetId)) {
             widget = this.allWidgets.find(w => w.widgetId == widgetId);
         }else{
-            widgetId == 'LastActionItem' ? widget = this.allWidgets.find(w => w.type == widgetId) : widget = this.allWidgets.find(w => w.widgetType == widgetId);
+            widgetId == 'LastActorItem' ? widget = this.allWidgets.find(w => w.type == widgetId) : widget = this.allWidgets.find(w => w.widgetType == widgetId);
         }
 
         return widget ? widget.name : '';
@@ -266,7 +266,7 @@ class WidgetLookup {
         if(/^\d+$/.test(widgetId)) {
             widget = this.allWidgets.find(w => w.widgetId == widgetId);
         }else{
-            widgetId == 'LastActionItem' ? widget = this.allWidgets.find(w => w.type == widgetId) : widget = this.allWidgets.find(w => w.widgetType == widgetId);
+            widgetId == 'LastActorItem' ? widget = this.allWidgets.find(w => w.type == widgetId) : widget = this.allWidgets.find(w => w.widgetType == widgetId);
         }
         
         let wikiName = widget.wikiName;

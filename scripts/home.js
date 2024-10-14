@@ -234,14 +234,11 @@ $(async function () {
         let menuOptions = [{
                 text: 'Edit',
                 callback: function(){ 
-
+                    showOrbSelectionModal(actionbarIndex, slotIndex, actionIndex);
                 }
             }, {
                 text: 'Delete',
-                callback: function(){ 
-                    profileManager.deleteActionbarSlot($('#profileDropdown').text(), actionbarIndex, slotIndex);
-                    uiManager.removeSlot(actionbarIndex, slotIndex);
-                },
+                callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
                 css: 'color:red;'
             }
         ]
@@ -266,15 +263,23 @@ $(async function () {
         const actionbarIndex = $(this).attr('data-actionbar-index');
 
         let menuOptions = [{
-            text: 'Delete',
-            callback: confirmDeleteSlot(actionbarIndex, slotIndex),
-            css: 'color:red;'
-        }, {
-            text: 'Add slot',
-            callback: function(){ 
-                modalProvider.showAddNewSlotModal(actionbarIndex, slotIndex);
-            }
-        }]
+                text: 'Add slot',
+                callback: function(){ 
+                    modalProvider.showAddNewSlotModal(actionbarIndex, slotIndex);
+                }
+            },{
+                text: 'Rename',
+                callback: function() { 
+                    modalProvider.showPromptModal("Enter new name", function(result) {
+                        profileManager.updateSlotName(actionbarIndex, slotIndex, result);
+                        uiManager.setSlotAction(actionbarIndex, slotIndex, -1, result);
+                    });
+                }
+            },{
+                text: 'Delete',
+                callback: confirmDeleteSlot(actionbarIndex, slotIndex),
+                css: 'color:red;'
+            }]
 
         contextMenuProvider.showContextMenu(e, menuOptions);
     });
@@ -343,6 +348,28 @@ $(async function () {
             contextMenuProvider.showContextMenu(e, menuOptions);
         });
 
+    });
+
+    $(document).on("contextmenu", ".LastActorItem", function (e) {
+            
+            e.preventDefault();
+    
+            const slotIndex = $(this).attr('data-slot-index');
+            const actionbarIndex = $(this).attr('data-actionbar-index');
+            const actionIndex = $(this).attr('data-action-index');
+    
+            let menuOptions = [{
+                text: 'Delete',
+                callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
+                css: 'color:red;'
+            },{
+                text: 'Convert to compound',
+                callback: function(){ 
+                    convertToCompound(actionbarIndex, slotIndex);
+                }
+            }];
+    
+            contextMenuProvider.showContextMenu(e, menuOptions);
     });
 
 });
