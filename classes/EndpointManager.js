@@ -1,7 +1,7 @@
 
 var useProxy = true;
 
-const defaultApiBaseUrl = 'https://osrsplugins.xyz/api';
+const defaultApiBaseUrl = 'https://osrsplugins.com/api';
 const proxyUrl = 'https://cors-proxy.fringe.zone/';
 
 class EndpointManager {
