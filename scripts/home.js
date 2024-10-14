@@ -46,6 +46,11 @@ $(async function () {
         useProxy = $("#use-proxy").is(":checked");
         storage.save('apiBaseUrl', apiBaseUrlText);
         storage.save('useProxy', useProxy);
+
+        indexedDBHelper.clearMetaData();
+
+        itemFetcher.cacheItemCatalogue();
+
         notificationManager.info(`API base URL updated to ${apiBaseUrlText} & use proxy set to ${useProxy}`);
     });
 

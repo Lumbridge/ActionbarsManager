@@ -311,7 +311,12 @@ class ModalProvider {
 
             if (slot.type == "CompoundItem") {
 
-                slot.actions.push({ widgetId: selectedValue, modifier: true, type: type });
+                if(type == "OrbItem") {
+                    slot.actions.push({ widgetType: selectedValue, modifier: true, type: type });
+                }else{
+                    slot.actions.push({ widgetId: selectedValue, modifier: true, type: type });
+                }
+
                 await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
 
             } else {

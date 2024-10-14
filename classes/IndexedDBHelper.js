@@ -39,6 +39,17 @@ class IndexedDBHelper {
         });
     }
 
+    async clearMetaData() {
+        try {
+            const db = await this.dbPromise;
+            const transaction = db.transaction('metadata', 'readwrite');
+            const store = transaction.objectStore('metadata');
+            store.clear();
+        } catch (error) {
+            console.log(error);
+            notificationManager.error('Error clearing metadata: ' + error.message);
+        }
+    }
 
     // Save an item or metadata in IndexedDB
     saveToIndexedDB(storeName, data) {
