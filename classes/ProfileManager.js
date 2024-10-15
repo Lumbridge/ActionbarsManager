@@ -39,8 +39,8 @@ class ProfileManager {
         this.saveActionbars(profileName, actionbars);
     }
 
-    addItemToActionbar(profileName, type, actionbarIndex, slotIndex, actionIndex = -1, id = -1, action = "") {
-        let template = jsonTemplateProvider.getTemplate(type, id, action);
+    addItemToActionbar(profileName, type, actionbarIndex, slotIndex, actionIndex = -1, id = -1, action = "", modifier) {
+        let template = jsonTemplateProvider.getTemplate(type, id, action, modifier);
 
         let slot = JSON.parse(template);
         if (actionIndex != -1) slot.actionIndex = actionIndex;
@@ -192,12 +192,13 @@ class ProfileManager {
         this.saveProfile(profileName, profileData);
     }
 
-    updateSlotAction(actionbarIndex, slotIndex, action, actionIndex = -1, id = -1) {
+    updateSlotAction(actionbarIndex, slotIndex, action, actionIndex = -1, id = -1, modifier) {
         let profileName = this.getCurrentProfileName();
         let slot = this.getActionbarSlot(profileName, actionbarIndex, slotIndex, actionIndex);
 
         if (slot.type == "ItemItem") slot.action = action;
         if (id != -1) slot = this.updateSlotId(slot, id);
+        if (modifier != undefined) slot.modifier = modifier;
 
         this.saveActionbarSlot(profileName, actionbarIndex, slotIndex, slot, actionIndex);
     }

@@ -65,14 +65,14 @@ class JsonTemplateProvider {
         `;
     }
 
-    getTemplate(type, id, action) {
+    getTemplate(type, id, action, modifier) {
         switch (type) {
             case "ItemItem":
-                return jsonTemplateProvider.getItemTemplate(false, id, action);
+                return jsonTemplateProvider.getItemTemplate(modifier, id, action);
             case "PrayerItem":
-                return jsonTemplateProvider.getPrayerTemplate(false, id, action);
+                return jsonTemplateProvider.getPrayerTemplate(modifier, id, action);
             case "OrbItem":
-                return jsonTemplateProvider.getOrbTemplate(false, id);
+                return jsonTemplateProvider.getOrbTemplate(modifier, id);
             case "SpellBookItem":
                 return jsonTemplateProvider.getSpellBookItemTemplate(id);
             case "CompoundItem":

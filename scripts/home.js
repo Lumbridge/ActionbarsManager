@@ -7,6 +7,10 @@ $(async function () {
     uiManager.loadApiControls();
     uiManager.loadProfileMenuData();
 
+    $(document).on('change', '#option-select', function () {
+        toggleModifierSwitch();
+    });
+
     $(document).on("click", "#create-profile-button", function () {
         modalProvider.showPromptModal("Enter profile name", function (profileName) {
             profileManager.createProfile(profileName);
@@ -266,8 +270,7 @@ $(async function () {
             text: 'Delete',
             callback: confirmDeleteSlot(actionbarIndex, slotIndex, actionIndex),
             css: 'color:red;'
-        }
-        ]
+        }]
 
         if (!actionIndex) {
             menuOptions.splice(1, 0, {
@@ -549,4 +552,17 @@ async function loadActionbars() {
         var actionbarIndex = $(this).attr('id').split('-')[1];
         sortableManager.initializeSortableContainer(this, actionbarIndex);
     });
+}
+
+function toggleModifierSwitch() {
+    let val = $('#option-select').val();
+    if (val === "Wield" || 
+        widgetLookup.orbs.some(orb => orb.widgetType == val) ||
+        widgetLookup.normalPrayers.some(prayer => prayer.widgetId == val)) {
+        
+            $('#modifier-container').show();
+
+    } else {
+        $('#modifier-container').hide();
+    }
 }

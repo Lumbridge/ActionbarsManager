@@ -141,13 +141,17 @@ class ModalProvider {
         bootbox.dialog({
             title: 'Select Action',
             message: `
-                            <div class="form-group">
-                                <label for="option-select">Select an action</label>
-                                <select id="option-select" class="form-control">
-                                    ${actions.map(action => `<option value="${action}">${action}</option>`).join('')}
-                                </select>
-                            </div>
-                        `,
+                        <div class="form-group">
+                            <label for="option-select">Select an action</label>
+                            <select id="option-select" class="form-control">
+                                ${actions.map(action => `<option value="${action}">${action}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group mt-2 text-center" id="modifier-container" style="display: none;">
+                            <label for="modifier-switch">Equip only (no un-equip)</label>
+                            <input type="checkbox" id="modifier-switch" class="form-check-input" checked />
+                        </div>
+                    `,
             buttons: {
                 cancel: { label: "Cancel", className: 'btn-secondary' },
                 save: {
@@ -155,6 +159,7 @@ class ModalProvider {
                     className: 'btn-primary',
                     callback: async function () {
                         const selectedAction = $('#option-select').val();
+                        const isModifierChecked = $('#modifier-switch').is(':checked');
 
                         var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
 
@@ -164,7 +169,7 @@ class ModalProvider {
 
                         if (slotIndex == actionbar.length) {
 
-                            profileManager.addItemToActionbar(profileName, "ItemItem", actionbarIndex, slotIndex, -1, itemId, selectedAction);
+                            profileManager.addItemToActionbar(profileName, "ItemItem", actionbarIndex, slotIndex, -1, itemId, selectedAction, isModifierChecked);
                             var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex);
                             var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
                             uiManager.addNewSlot(actionbarIndex, slotHtml);
@@ -175,21 +180,38 @@ class ModalProvider {
                             var slot = actionbar[slotIndex];
 
                             if (slot.type == "CompoundItem") {
-                                slot.actions.push({ action: selectedAction, itemId: itemId, modifier: true, type: "ItemItem" });
-                                await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
+
+                                if(actionIndex == -1) {
+
+                                    slot.actions.push({ action: selectedAction, itemId: itemId, modifier: isModifierChecked, type: "ItemItem" });
+                                    await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
+
+                                } else {
+
+                                    slot.actions[actionIndex] = { action: selectedAction, itemId: itemId, modifier: isModifierChecked, type: "ItemItem" };
+                                    profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedAction, actionIndex, itemId, isModifierChecked);
+                                    uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
+                                    uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
+                                    bootbox.hideAll();
+
+                                }
+
                             } else {
-                                profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedAction, actionIndex, itemId);
+
+                                profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedAction, actionIndex, itemId, isModifierChecked);
                                 uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
                                 uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
                                 bootbox.hideAll();
+
                             }
 
                         }
                     }
                 }
             }
+        }).on('shown.bs.modal', function () {
+            toggleModifierSwitch();
         });
-
     }
 
     showPrayerSelectionModal(actionbarIndex, slotIndex, actionIndex = -1) {
@@ -205,6 +227,10 @@ class ModalProvider {
                         ${normalPrayers.map(prayer => `<option data-type="PrayerItem" value="${prayer.widgetId}">${prayer.name}</option>`).join('')}
                     </select>
                 </div>
+                <div class="form-group mt-2 text-center" id="modifier-container" style="display: none;">
+                    <label for="modifier-switch">Only turn prayer on (no toggling)</label>
+                    <input type="checkbox" id="modifier-switch" class="form-check-input" />
+                </div>
             `,
             buttons: {
                 cancel: { label: "Cancel", className: 'btn-secondary' },
@@ -213,6 +239,7 @@ class ModalProvider {
                     className: 'btn-primary',
                     callback: async function () {
 
+                        const isModifierChecked = $('#modifier-switch').is(':checked');
                         const selectedValue = $('#option-select').val();
                         const selectedLookupItem = widgetLookup.allWidgets.find(widget => widget.widgetId == selectedValue);
                         const profileName = profileManager.getCurrentProfileName();
@@ -221,12 +248,14 @@ class ModalProvider {
 
                         var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
 
-                        await modalProvider.handleModalSave(actionbar, actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem, imageLink);
+                        await modalProvider.handleModalSave(actionbar, actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem, imageLink, isModifierChecked);
 
                     }
                 }
             }
-        });
+        }).on('shown.bs.modal', function () {
+            toggleModifierSwitch();
+        });;
     }
 
     showSpellbookSelectionModal(actionbarIndex, slotIndex, actionIndex = -1) {
@@ -277,6 +306,10 @@ class ModalProvider {
                         ${orbs.map(orb => `<option data-type="OrbItem" value="${orb.widgetType}">${orb.name}</option>`).join('')}
                     </select>
                 </div>
+                <div class="form-group mt-2 text-center" id="modifier-container" style="display: none;">
+                    <label for="modifier-switch">Only turn orb on (no toggling)</label>
+                    <input type="checkbox" id="modifier-switch" class="form-check-input" />
+                </div>
             `,
             buttons: {
                 cancel: { label: "Cancel", className: 'btn-secondary' },
@@ -285,6 +318,7 @@ class ModalProvider {
                     className: 'btn-primary',
                     callback: async function () {
 
+                        const isModifierChecked = $('#modifier-switch').is(':checked');
                         const selectedValue = $('#option-select').val();
                         const selectedLookupItem = widgetLookup.allWidgets.find(widget => widget.widgetId == selectedValue);
                         const profileName = profileManager.getCurrentProfileName();
@@ -293,21 +327,23 @@ class ModalProvider {
 
                         var actionbar = profileManager.getActionbar(profileName, actionbarIndex);
 
-                        await modalProvider.handleModalSave(actionbar, actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem, imageLink);
+                        await modalProvider.handleModalSave(actionbar, actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem, imageLink, isModifierChecked);
 
                     }
                 }
             }
+        }).on('shown.bs.modal', function () {
+            toggleModifierSwitch();
         });
     }
 
-    async handleModalSave(actionbar, actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem, imageLink) {
+    async handleModalSave(actionbar, actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem, imageLink, modifier) {
 
         let profileName = profileManager.getCurrentProfileName();
 
         if (slotIndex == actionbar.length) {
 
-            await modalProvider.addNewSlotToActionbar(actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem);
+            await modalProvider.addNewSlotToActionbar(actionbarIndex, slotIndex, type, actionIndex, selectedValue, selectedLookupItem, modifier);
 
         } else {
 
@@ -316,16 +352,16 @@ class ModalProvider {
             if (slot.type == "CompoundItem") {
 
                 if(type == "OrbItem") {
-                    slot.actions.push({ widgetType: selectedValue, modifier: true, type: type });
+                    slot.actions.push({ widgetType: selectedValue, modifier: modifier, type: type });
                 }else{
-                    slot.actions.push({ widgetId: selectedValue, modifier: true, type: type });
+                    slot.actions.push({ widgetId: selectedValue, modifier: modifier, type: type });
                 }
 
                 await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
 
             } else {
 
-                profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedLookupItem, actionIndex, selectedValue)
+                profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedLookupItem, actionIndex, selectedValue, modifier)
                 uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, `Toggle ${selectedLookupItem.name}`);
                 uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
                 bootbox.hideAll();
@@ -335,9 +371,9 @@ class ModalProvider {
 
     }
 
-    async addNewSlotToActionbar(actionbarIndex, slotIndex, slotType, actionIndex = -1, actionId, slot) {
+    async addNewSlotToActionbar(actionbarIndex, slotIndex, slotType, actionIndex = -1, actionId, slot, modifier) {
         var profileName = profileManager.getCurrentProfileName();
-        profileManager.addItemToActionbar(profileName, slotType, actionbarIndex, slotIndex, -1, actionId, slot);
+        profileManager.addItemToActionbar(profileName, slotType, actionbarIndex, slotIndex, -1, actionId, slot, modifier);
         var slot = await profileManager.getActionbarSlotWithApiDataAndImageLink(profileName, actionbarIndex, slotIndex, actionIndex);
         var slotHtml = htmlTemplateProvider.getSlotTemplate(actionbarIndex, slotIndex, slot);
         uiManager.addNewSlot(actionbarIndex, slotHtml);
