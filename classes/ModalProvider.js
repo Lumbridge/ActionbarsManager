@@ -54,7 +54,7 @@ class ModalProvider {
 
                             var slot = actionbar[slotIndex];
 
-                            if (slot.type == "CompoundItem") {
+                            if (slot && slot.type == "CompoundItem") {
                                 slot.actions.push({ type: selectedType, customSpriteId: -1 });
                                 await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
                             } else {
