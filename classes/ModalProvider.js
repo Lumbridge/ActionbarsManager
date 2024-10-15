@@ -8,6 +8,8 @@ class ModalProvider {
                     callback(result);
                 }
             }
+        }).on('shown.bs.modal', function () {
+            $('#searchBox').focus();
         });
     }
 
@@ -81,6 +83,8 @@ class ModalProvider {
                 </div>
             `,
             closeButton: true
+        }).on('shown.bs.modal', function () {
+            $('#searchBox').focus();
         });
 
         $(document).off('input', '#searchBox');
