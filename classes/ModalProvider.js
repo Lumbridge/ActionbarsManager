@@ -14,58 +14,58 @@ class ModalProvider {
     }
 
     showAddNewSlotModal(actionbarIndex, slotIndex) {
-        // show a context menu to select the type of slot to add: options are Item, Prayer, Spellbook and Compound
+        // show buttons to select the type of slot to add: options are Item, Prayer, Spellbook, Orb, and Compound
         bootbox.dialog({
             title: 'Add New Slot',
-            message: `
-                <div class="form-group">
-                    <label for="option-select">Select Slot Type</label>
-                    <select id="option-select" class="form-control">
-                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="ItemItem">Item</option>
-                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="PrayerItem">Prayer</option>
-                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="SpellBookItem">Spell</option>
-                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="OrbItem">Orb</option>
-                        <option data-actionbar-index="${actionbarIndex}" data-slot-index="${slotIndex}" value="LastActorItem">Attack last actor</option>
-                    </select>
+        message: `
+                <div class="form-group d-grid gap-2">
+                    <button id="item-button" class="btn btn-outline-secondary btn-lg rounded-0"><img class="menu-image" src="https://oldschool.runescape.wiki/images/Dragon_scimitar_detail.png" alt="Item image"> Item</button>
+                    <button id="prayer-button" class="btn btn-outline-secondary btn-lg rounded-0"><img class="menu-image" src="https://oldschool.runescape.wiki/images/Prayer_icon_%28detail%29.png" alt="Prayer image"> Prayer</button>
+                    <button id="spellbook-button" class="btn btn-outline-secondary btn-lg rounded-0"><img class="menu-image" src="https://oldschool.runescape.wiki/images/Spellbook.png" alt="Spell image"> Spell</button>
+                    <button id="orb-button" class="btn btn-outline-secondary btn-lg rounded-0"><img class="menu-image" src="https://oldschool.runescape.wiki/images/Special_attack_orb.png" alt="Orb image"> Orb</button>
+                    <button id="last-actor-button" class="btn btn-outline-secondary btn-lg rounded-0"><img class="menu-image" src="https://oldschool.runescape.wiki/images/Attack_icon.png" alt="Item image"> Attack last actor</button>
                 </div>
             `,
             buttons: {
-                cancel: { label: "Cancel", className: 'btn-secondary' },
-                save: {
-                    label: "Choose",
-                    className: 'btn-primary',
-                    callback: async function () {
-
-                        const selectedType = $('#option-select').val();
-
-                        let actionbar = profileManager.getActionbar(profileManager.getCurrentProfileName(), actionbarIndex);
-
-                        if (!slotIndex) {
-                            slotIndex = actionbar.length;
-                        }
-
-                        if (selectedType == "ItemItem") {
-                            modalProvider.showItemSearchModal(actionbarIndex, slotIndex);
-                        } else if (selectedType == "PrayerItem") {
-                            modalProvider.showPrayerSelectionModal(actionbarIndex, slotIndex);
-                        } else if (selectedType == "OrbItem") {
-                            modalProvider.showOrbSelectionModal(actionbarIndex, slotIndex);
-                        } else if (selectedType == "LastActorItem") {
-
-                            var slot = actionbar[slotIndex];
-
-                            if (slot && slot.type == "CompoundItem") {
-                                slot.actions.push({ type: selectedType, customSpriteId: -1 });
-                                await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
-                            } else {
-                                await modalProvider.addNewSlotToActionbar(actionbarIndex, slotIndex, "LastActorItem", -1, -1, { name: "Attack Last Actor", customSpriteId: -1 });
-                            }
-
-                        } else if (selectedType == "SpellBookItem") {
-                            modalProvider.showSpellbookSelectionModal(actionbarIndex, slotIndex);
-                        }
-                    }
+                cancel: {
+                    label: "Cancel", className: 'btn-secondary'
                 }
+            }
+        });
+
+        $(document).off('click', '#item-button').on('click', '#item-button', function () {
+            modalProvider.showItemSearchModal(actionbarIndex, slotIndex);
+        });
+
+        $(document).off('click', '#prayer-button').on('click', '#prayer-button', function () {
+            modalProvider.showPrayerSelectionModal(actionbarIndex, slotIndex);
+        });
+
+        $(document).off('click', '#spellbook-button').on('click', '#spellbook-button', function () {
+            modalProvider.showSpellbookSelectionModal(actionbarIndex, slotIndex);
+        });
+
+        $(document).off('click', '#orb-button').on('click', '#orb-button', function () {
+            modalProvider.showOrbSelectionModal(actionbarIndex, slotIndex);
+        });
+
+        $(document).off('click', '#last-actor-button').on('click', '#last-actor-button', async function () {
+            let actionbar = profileManager.getActionbar(profileManager.getCurrentProfileName(), actionbarIndex);
+
+            if (!slotIndex) {
+                slotIndex = actionbar.length;
+            }
+
+            var slot = actionbar[slotIndex];
+
+            if (slot && slot.type == "CompoundItem") {
+                slot.actions.push({type: "LastActorItem", customSpriteId: -1});
+                await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
+            } else {
+                await modalProvider.addNewSlotToActionbar(actionbarIndex, slotIndex, "LastActorItem", -1, -1, {
+                    name: "Attack Last Actor",
+                    customSpriteId: -1
+                });
             }
         });
     }
@@ -153,7 +153,7 @@ class ModalProvider {
                         </div>
                     `,
             buttons: {
-                cancel: { label: "Cancel", className: 'btn-secondary' },
+                cancel: {label: "Cancel", className: 'btn-secondary'},
                 save: {
                     label: "Save",
                     className: 'btn-primary',
@@ -181,14 +181,24 @@ class ModalProvider {
 
                             if (slot.type == "CompoundItem") {
 
-                                if(actionIndex == -1) {
+                                if (actionIndex == -1) {
 
-                                    slot.actions.push({ action: selectedAction, itemId: itemId, modifier: isModifierChecked, type: "ItemItem" });
+                                    slot.actions.push({
+                                        action: selectedAction,
+                                        itemId: itemId,
+                                        modifier: isModifierChecked,
+                                        type: "ItemItem"
+                                    });
                                     await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
 
                                 } else {
 
-                                    slot.actions[actionIndex] = { action: selectedAction, itemId: itemId, modifier: isModifierChecked, type: "ItemItem" };
+                                    slot.actions[actionIndex] = {
+                                        action: selectedAction,
+                                        itemId: itemId,
+                                        modifier: isModifierChecked,
+                                        type: "ItemItem"
+                                    };
                                     profileManager.updateSlotAction(actionbarIndex, slotIndex, selectedAction, actionIndex, itemId, isModifierChecked);
                                     uiManager.setSlotAction(actionbarIndex, slotIndex, actionIndex, selectedAction);
                                     uiManager.setSlotImage(actionbarIndex, slotIndex, actionIndex, imageLink);
@@ -233,7 +243,7 @@ class ModalProvider {
                 </div>
             `,
             buttons: {
-                cancel: { label: "Cancel", className: 'btn-secondary' },
+                cancel: {label: "Cancel", className: 'btn-secondary'},
                 save: {
                     label: "Save",
                     className: 'btn-primary',
@@ -255,7 +265,8 @@ class ModalProvider {
             }
         }).on('shown.bs.modal', function () {
             toggleModifierSwitch();
-        });;
+        });
+        ;
     }
 
     showSpellbookSelectionModal(actionbarIndex, slotIndex, actionIndex = -1) {
@@ -272,7 +283,7 @@ class ModalProvider {
                 </div>
             `,
             buttons: {
-                cancel: { label: "Cancel", className: 'btn-secondary' },
+                cancel: {label: "Cancel", className: 'btn-secondary'},
                 save: {
                     label: "Save",
                     className: 'btn-primary',
@@ -312,7 +323,7 @@ class ModalProvider {
                 </div>
             `,
             buttons: {
-                cancel: { label: "Cancel", className: 'btn-secondary' },
+                cancel: {label: "Cancel", className: 'btn-secondary'},
                 save: {
                     label: "Save",
                     className: 'btn-primary',
@@ -351,10 +362,10 @@ class ModalProvider {
 
             if (slot.type == "CompoundItem") {
 
-                if(type == "OrbItem") {
-                    slot.actions.push({ widgetType: selectedValue, modifier: modifier, type: type });
-                }else{
-                    slot.actions.push({ widgetId: selectedValue, modifier: modifier, type: type });
+                if (type == "OrbItem") {
+                    slot.actions.push({widgetType: selectedValue, modifier: modifier, type: type});
+                } else {
+                    slot.actions.push({widgetId: selectedValue, modifier: modifier, type: type});
                 }
 
                 await modalProvider.updateCompoundChildSlot(actionbarIndex, slotIndex, slot);
@@ -406,8 +417,8 @@ class ModalProvider {
             </div>
             `,
             buttons: {
-                cancel: { label: "Cancel", className: 'btn-secondary' },
-                save: { label: "Save", className: 'btn-primary', callback: this.handleJsonImport() }
+                cancel: {label: "Cancel", className: 'btn-secondary'},
+                save: {label: "Save", className: 'btn-primary', callback: this.handleJsonImport()}
             }
         });
     }
@@ -474,7 +485,7 @@ class ModalProvider {
                 </div>
             `,
             buttons: {
-                cancel: { label: "Cancel", className: 'btn-secondary' },
+                cancel: {label: "Cancel", className: 'btn-secondary'},
                 save: {
                     label: "Save",
                     className: 'btn-primary',
@@ -483,7 +494,7 @@ class ModalProvider {
                         if (keybind) {
                             const key = $('#keybind-input').attr('data-key');
                             const keyCode = $('#keybind-input').attr('data-keycode');
-                            let keybindData = { key: slotIndex, keybind: `${keyCode}:0` };    
+                            let keybindData = {key: slotIndex, keybind: `${keyCode}:0`};
                             keybindManager.setSlotKeybind(profileManager.getCurrentProfileName(), slotIndex, keybindData);
                             uiManager.setSlotKeybind(slotIndex, key);
                         }

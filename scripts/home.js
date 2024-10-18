@@ -165,6 +165,10 @@ $(async function () {
         var actionbarIndex = $(this).attr('data-actionbar-index');
         var slotIndex = $(this).attr('data-slot-index');
 
+        var actionbar = profileManager.getActionbar(profileManager.getCurrentProfileName(), actionbarIndex);
+
+        slotIndex == undefined ? slotIndex = actionbar.length : slotIndex = parseInt(slotIndex);
+
         modalProvider.showAddNewSlotModal(actionbarIndex, slotIndex);
     });
 
@@ -288,8 +292,12 @@ $(async function () {
 
         e.preventDefault();
 
-        const slotIndex = $(this).attr('data-slot-index');
         const actionbarIndex = $(this).attr('data-actionbar-index');
+        let slotIndex = $(this).attr('data-slot-index');
+
+        let actionbar = profileManager.getActionbar(profileManager.getCurrentProfileName(), actionbarIndex);
+
+        slotIndex == undefined ? slotIndex = actionbar.length : slotIndex = parseInt(slotIndex);
 
         let menuOptions = [{
             text: 'Add slot',

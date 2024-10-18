@@ -83,3 +83,7 @@
 .actionbar-sortable{
     min-height: 160px;
 }
+
+.menu-image {
+    max-height: 24px;
+}
