@@ -11,7 +11,7 @@ class UIManager {
     setSlotImage(actionbarIndex, slotIndex, actionIndex, newImageLink) {
         if (actionIndex && actionIndex != -1) {
 
-            // if aciton index is 0 then set the parent slot image as well
+            // if action index is 0 then set the parent slot image as well
             if (actionIndex == 0) {
                 $(`.slot-container[data-actionbar-index="${actionbarIndex}"][data-slot-index="${slotIndex}"]`).find('.slot-image').attr('src', newImageLink);
             }
